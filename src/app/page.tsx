@@ -990,7 +990,7 @@ function InterviewPrep() {
       </div>
       <div className="rounded-xl p-4 mb-4" style={{background:'#064e3b',border:'1px solid #065f46'}}>
         <div className="text-xs font-semibold mb-1" style={{color:'#6ee7b7',textTransform:'uppercase'}}>STAR reminder</div>
-        <p className="text-sm" style={{color:'#d1fae5'}}>STAR: Situation, Task, Action, Result. Always end with a measurable outcome.</p>
+        <p className="text-sm" style={{color:'#d1fae5'}}>Situation - Task - Action - Result. Always end with a number or measurable outcome.</p>
       </div>
       <div className="card p-4">
         <h2 className="text-sm font-semibold mb-3" style={{color:'#e8d5ff'}}>Your unique selling points</h2>
