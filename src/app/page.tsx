@@ -990,7 +990,7 @@ function InterviewPrep() {
       </div>
       <div className="rounded-xl p-4 mb-4" style={{background:'#064e3b',border:'1px solid #065f46'}}>
         <div className="text-xs font-semibold mb-1" style={{color:'#6ee7b7',textTransform:'uppercase'}}>STAR reminder</div>
-        <p className="text-sm" style={{color:'#d1fae5'}}>Situation -> Task -> Action -> Result. Always end with a number or measurable outcome.</p>
+        <p className="text-sm" style={{color:'#d1fae5'}}>Situation - Task - Action - Result. Always end with a number or measurable outcome.</p>
       </div>
       <div className="card p-4">
         <h2 className="text-sm font-semibold mb-3" style={{color:'#e8d5ff'}}>Your unique selling points</h2>
@@ -1134,7 +1134,7 @@ function WeeklyPlan() {
       <div className="rounded-xl p-4 mt-4" style={{background:'#064e3b',border:'1px solid #065f46'}}>
         <div className="text-xs font-semibold mb-1" style={{color:'#6ee7b7',textTransform:'uppercase'}}>The numbers game</div>
         <p className="text-sm" style={{color:'#d1fae5',lineHeight:'1.6'}}>
-          In Dublin tech, a typical pipeline: 40 applications -> 8 recruiter calls -> 4 first interviews -> 2 second interviews -> 1 offer. If you follow this 4-week plan, you can hit those numbers. Keep going, Devanshi.
+          In Dublin tech, a typical pipeline: 40 applications -> 8 recruiter calls -> 4 first interviews -> 2 second interviews  -  1 offer. If you follow this 4-week plan, you can hit those numbers. Keep going, Devanshi.
         </p>
       </div>
     </div>
@@ -1203,7 +1203,7 @@ function SalaryGuide() {
         <h2 className="text-sm font-semibold mb-3" style={{color:'#e8d5ff'}}>Negotiation tips</h2>
         {['Always negotiate. 85% of employers expect it. First offer is rarely the best offer.','Anchor high. If they ask your expectation, say EUR5-10k above your minimum.','Ask about the full package: pension (5-10%), health insurance, bonus (5-15%), training budget, hybrid.','Your LLM evaluation background commands a premium right now due to EU AI Act demand. Use it.','Use competing offers or agency interest as leverage - even a conversation with CPL counts.'].map((t,i)=>(
           <div key={i} className="flex items-start gap-2 mb-2">
-            <span style={{color:'#6ee7b7',flexShrink:0}}>-></span>
+            <span style={{color:'#6ee7b7',flexShrink:0}}> </span>
             <span className="text-sm" style={{color:'#c4b5fd'}}>{t}</span>
           </div>
         ))}
