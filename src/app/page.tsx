@@ -1,15 +1,16 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { db, Application, CVData } from '@/lib/supabase'
 import { JOBS, COMPANIES, PORTALS, AGENCIES, QUOTES, TIPS, SV_NEWS } from '@/lib/data'
 import {
   LayoutDashboard, Briefcase, Newspaper, Building2, Globe, Users,
   ClipboardList, FileText, Brain, TrendingUp, Calendar, ChevronRight,
   ExternalLink, Plus, Trash2, RefreshCw, Star, CheckCircle, Clock,
-  XCircle, AlertCircle, Award, Target, Zap, Sparkles, Radio,
+  XCircle, AlertCircle, Award, Target, Zap, Sparkles, Menu, X,
+  Bell, Radio, ChevronDown,
 } from 'lucide-react'
 
-// ── helpers ──────────────────────────────────────────────────────────────────
+// ── colour maps ───────────────────────────────────────────────────────────────
 const ROLE_COLORS: Record<string, string> = {
   'Trust & Safety': 'chip-ts', 'AI Analyst': 'chip-ai',
   'Data Analyst': 'chip-da', 'Product Owner': 'chip-po', 'Business Analyst': 'chip-ba',
@@ -23,14 +24,14 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
   Offer: <Award size={11} />, Rejected: <XCircle size={11} />, Ghosted: <AlertCircle size={11} />,
 }
 const CAT_COLORS: Record<string, string> = {
-  'Big Tech': '#7c3aed', 'AI': '#1d4ed8', 'Fintech': '#0369a1', 'SaaS': '#b45309',
-  'Security': '#b91c1c', 'Platforms': '#0f766e', 'Consulting': '#047857',
-  'Finance': '#1d4ed8', 'Startup': '#d97706',
+  'Big Tech': '#7c3aed', AI: '#1d4ed8', Fintech: '#0369a1', SaaS: '#b45309',
+  Security: '#b91c1c', Platforms: '#0f766e', Consulting: '#047857',
+  Finance: '#1d4ed8', Startup: '#d97706',
 }
 const CAT_BG: Record<string, string> = {
-  'Big Tech': '#ede9fe', 'AI': '#dbeafe', 'Fintech': '#e0f2fe', 'SaaS': '#fef3c7',
-  'Security': '#fee2e2', 'Platforms': '#ccfbf1', 'Consulting': '#d1fae5',
-  'Finance': '#dbeafe', 'Startup': '#fef3c7',
+  'Big Tech': '#ede9fe', AI: '#dbeafe', Fintech: '#e0f2fe', SaaS: '#fef3c7',
+  Security: '#fee2e2', Platforms: '#ccfbf1', Consulting: '#d1fae5',
+  Finance: '#dbeafe', Startup: '#fef3c7',
 }
 
 function roleChip(role: string) {
@@ -49,74 +50,172 @@ function ageBadge(age: number) {
   return null
 }
 
-// ── nav ───────────────────────────────────────────────────────────────────────
+// ── nav config ────────────────────────────────────────────────────────────────
 const NAV = [
-  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
-  { id: 'jobs', label: 'Live Jobs', icon: <Briefcase size={16} /> },
-  { id: 'silicon', label: 'Silicon Republic', icon: <Newspaper size={16} /> },
-  { id: 'svnews', label: 'AI & Tech News', icon: <TrendingUp size={16} /> },
-  { id: 'companies', label: 'All Companies', icon: <Building2 size={16} /> },
-  { id: 'portals', label: 'Job Portals', icon: <Globe size={16} /> },
-  { id: 'agencies', label: 'Agencies', icon: <Users size={16} /> },
-  { id: 'tracker', label: 'My Tracker', icon: <ClipboardList size={16} /> },
-  { id: 'cv', label: 'CV Editor', icon: <FileText size={16} /> },
-  { id: 'interview', label: 'Interview Prep', icon: <Brain size={16} /> },
-  { id: 'plan', label: '4-Week Plan', icon: <Calendar size={16} /> },
-  { id: 'salary', label: 'Salary Guide', icon: <Target size={16} /> },
+  { id: 'dashboard', label: 'Dashboard',       icon: <LayoutDashboard size={18} /> },
+  { id: 'jobs',      label: 'Live Jobs',        icon: <Briefcase size={18} /> },
+  { id: 'silicon',   label: 'Silicon Republic', icon: <Newspaper size={18} /> },
+  { id: 'svnews',    label: 'AI & Tech News',   icon: <TrendingUp size={18} /> },
+  { id: 'companies', label: 'All Companies',    icon: <Building2 size={18} /> },
+  { id: 'portals',   label: 'Job Portals',      icon: <Globe size={18} /> },
+  { id: 'agencies',  label: 'Agencies',         icon: <Users size={18} /> },
+  { id: 'tracker',   label: 'My Tracker',       icon: <ClipboardList size={18} /> },
+  { id: 'cv',        label: 'CV Editor',        icon: <FileText size={18} /> },
+  { id: 'interview', label: 'Interview Prep',   icon: <Brain size={18} /> },
+  { id: 'plan',      label: '4-Week Plan',       icon: <Calendar size={18} /> },
+  { id: 'salary',    label: 'Salary Guide',     icon: <Target size={18} /> },
+]
+
+// Bottom nav (mobile) — 5 most important
+const BOTTOM_NAV = [
+  { id: 'dashboard', label: 'Home',    icon: <LayoutDashboard size={20} /> },
+  { id: 'jobs',      label: 'Jobs',    icon: <Briefcase size={20} /> },
+  { id: 'svnews',    label: 'News',    icon: <TrendingUp size={20} /> },
+  { id: 'tracker',   label: 'Tracker', icon: <ClipboardList size={20} /> },
+  { id: 'plan',      label: 'Plan',    icon: <Calendar size={20} /> },
 ]
 
 const STATUSES = ['Saved', 'Applied', 'Interviewing', 'Offer', 'Rejected', 'Ghosted']
-const ROLES = ['Trust & Safety', 'AI Analyst', 'Data Analyst', 'Product Owner', 'Business Analyst']
+const ROLES    = ['Trust & Safety', 'AI Analyst', 'Data Analyst', 'Product Owner', 'Business Analyst']
 
-// ── live data hooks ───────────────────────────────────────────────────────────
+// ── auto-polling hooks ────────────────────────────────────────────────────────
+const NEWS_INTERVAL = 30 * 60 * 1000   // 30 min
+const JOBS_INTERVAL = 60 * 60 * 1000   // 60 min
+const APPS_INTERVAL =  2 * 60 * 1000   //  2 min
+
+/** returns seconds until next poll */
+function useCountdown(intervalMs: number, lastUpdated: string | null) {
+  const [secs, setSecs] = useState(0)
+  useEffect(() => {
+    if (!lastUpdated) return
+    function tick() {
+      const elapsed = Date.now() - new Date(lastUpdated!).getTime()
+      const remaining = Math.max(0, intervalMs - elapsed)
+      setSecs(Math.ceil(remaining / 1000))
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [lastUpdated, intervalMs])
+  return secs
+}
+
+function fmt(secs: number) {
+  if (secs <= 0) return 'now'
+  const m = Math.floor(secs / 60), s = secs % 60
+  return m > 0 ? `${m}m ${s}s` : `${s}s`
+}
+
 function useLiveNews() {
-  const [news, setNews] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
+  const [news, setNews]             = useState<any[]>([])
+  const [loading, setLoading]       = useState(false)
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
+  const [newCount, setNewCount]     = useState(0)
+  const prevTitles                  = useRef<Set<string>>(new Set())
 
-  const fetch_ = useCallback(async () => {
-    setLoading(true)
+  const fetch_ = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const res = await fetch('/api/news')
       if (!res.ok) return
       const data = await res.json()
-      if (data.news?.length) { setNews(data.news); setLastUpdated(data.lastUpdated) }
-    } catch { /* fall back to static */ } finally { setLoading(false) }
+      if (data.news?.length) {
+        const fresh = data.news.filter((n: any) => !prevTitles.current.has(n.title))
+        if (fresh.length && prevTitles.current.size > 0) setNewCount(c => c + fresh.length)
+        data.news.forEach((n: any) => prevTitles.current.add(n.title))
+        setNews(data.news)
+        setLastUpdated(data.lastUpdated)
+      }
+    } catch { /* fallback to static */ } finally { if (!silent) setLoading(false) }
   }, [])
 
-  useEffect(() => { fetch_() }, [fetch_])
-  return { news, loading, lastUpdated, refresh: fetch_ }
+  useEffect(() => {
+    fetch_()
+    const id = setInterval(() => fetch_(true), NEWS_INTERVAL)
+    // Also re-fetch when tab becomes visible
+    const onVisible = () => { if (document.visibilityState === 'visible') fetch_(true) }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => { clearInterval(id); document.removeEventListener('visibilitychange', onVisible) }
+  }, [fetch_])
+
+  return { news, loading, lastUpdated, newCount, clearNew: () => setNewCount(0), refresh: fetch_ }
 }
 
 function useLiveJobs() {
-  const [liveJobs, setLiveJobs] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
+  const [liveJobs, setLiveJobs]     = useState<any[]>([])
+  const [loading, setLoading]       = useState(false)
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
+  const [newCount, setNewCount]     = useState(0)
+  const prevIds                     = useRef<Set<string>>(new Set())
 
-  const fetch_ = useCallback(async () => {
-    setLoading(true)
+  const fetch_ = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const res = await fetch('/api/jobs')
       if (!res.ok) return
       const data = await res.json()
-      if (data.jobs?.length) { setLiveJobs(data.jobs); setLastUpdated(data.lastUpdated) }
-    } catch { /* fall back to static */ } finally { setLoading(false) }
+      if (data.jobs?.length) {
+        const fresh = data.jobs.filter((j: any) => !prevIds.current.has(j.id))
+        if (fresh.length && prevIds.current.size > 0) setNewCount(c => c + fresh.length)
+        data.jobs.forEach((j: any) => prevIds.current.add(j.id))
+        setLiveJobs(data.jobs)
+        setLastUpdated(data.lastUpdated)
+      }
+    } catch { /* fallback */ } finally { if (!silent) setLoading(false) }
   }, [])
 
-  useEffect(() => { fetch_() }, [fetch_])
-  return { liveJobs, loading, lastUpdated, refresh: fetch_ }
+  useEffect(() => {
+    fetch_()
+    const id = setInterval(() => fetch_(true), JOBS_INTERVAL)
+    const onVisible = () => { if (document.visibilityState === 'visible') fetch_(true) }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => { clearInterval(id); document.removeEventListener('visibilitychange', onVisible) }
+  }, [fetch_])
+
+  return { liveJobs, loading, lastUpdated, newCount, clearNew: () => setNewCount(0), refresh: fetch_ }
+}
+
+// ── toast notification ────────────────────────────────────────────────────────
+function Toast({ message, onClose }: { message: string; onClose: () => void }) {
+  useEffect(() => { const t = setTimeout(onClose, 4000); return () => clearTimeout(t) }, [onClose])
+  return (
+    <div className="toast animate-slide-up">
+      <Bell size={14} style={{ color: '#7c3aed', flexShrink: 0 }} />
+      <span>{message}</span>
+      <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#a78bfa', marginLeft: 'auto' }}>
+        <X size={12} />
+      </button>
+    </div>
+  )
+}
+
+// ── live pulse dot ────────────────────────────────────────────────────────────
+function PulseDot({ color = '#15803d' }: { color?: string }) {
+  return (
+    <span className="relative inline-flex" style={{ width: 8, height: 8 }}>
+      <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+        style={{ background: color }} />
+      <span className="relative inline-flex rounded-full" style={{ width: 8, height: 8, background: color }} />
+    </span>
+  )
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// ROOT APP
+// ═══════════════════════════════════════════════════════════════════════════════
 export default function App() {
-  const [page, setPage] = useState('dashboard')
-  const [apps, setApps] = useState<Application[]>([])
-  const [cv, setCV] = useState<CVData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)])
-  const [tip] = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)])
+  const [page, setPage]           = useState('dashboard')
+  const [apps, setApps]           = useState<Application[]>([])
+  const [cv, setCV]               = useState<CVData | null>(null)
+  const [loading, setLoading]     = useState(true)
+  const [quote]                   = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)])
+  const [tip]                     = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)])
   const [sidebarOpen, setSidebar] = useState(true)
+  const [mobileMenu, setMobileMenu] = useState(false)
+  const [toast, setToast]         = useState<string | null>(null)
+  const appsLastUpdated           = useRef<string>(new Date().toISOString())
 
+  // Initial load
   useEffect(() => {
     Promise.all([
       db.getApplications().then(setApps).catch(() => {}),
@@ -124,143 +223,242 @@ export default function App() {
     ]).finally(() => setLoading(false))
   }, [])
 
-  const refreshApps = useCallback(() => db.getApplications().then(setApps).catch(() => {}), [])
+  // Auto-refresh applications every 2 min
+  useEffect(() => {
+    const id = setInterval(async () => {
+      const fresh = await db.getApplications().catch(() => null)
+      if (fresh) {
+        if (fresh.length > apps.length) setToast(`${fresh.length - apps.length} new application(s) synced`)
+        setApps(fresh)
+        appsLastUpdated.current = new Date().toISOString()
+      }
+    }, APPS_INTERVAL)
+    return () => clearInterval(id)
+  }, [apps.length])
+
+  // Live jobs — runs at root so Dashboard always stays fresh
+  const { liveJobs, loading: liveLoading, lastUpdated: liveLastUpdated, newCount: liveNewCount, clearNew: liveClearNew, refresh: liveRefresh } = useLiveJobs()
+
+  const refreshApps = useCallback(async () => {
+    const fresh = await db.getApplications().catch(() => null)
+    if (fresh) setApps(fresh)
+  }, [])
 
   const stats = {
-    total: apps.length,
-    applied: apps.filter(a => a.status === 'Applied').length,
+    total:      apps.length,
+    applied:    apps.filter(a => a.status === 'Applied').length,
     interviews: apps.filter(a => a.status === 'Interviewing').length,
-    offers: apps.filter(a => a.status === 'Offer').length,
-    rate: apps.length ? Math.round(apps.filter(a => ['Interviewing', 'Offer'].includes(a.status)).length / apps.length * 100) : 0,
+    offers:     apps.filter(a => a.status === 'Offer').length,
+    rate:       apps.length ? Math.round(apps.filter(a => ['Interviewing', 'Offer'].includes(a.status)).length / apps.length * 100) : 0,
   }
 
+  function nav(id: string) { setPage(id); setMobileMenu(false) }
+
   return (
-    <div className="flex min-h-screen" style={{ background: '#faf7ff' }}>
+    <div style={{ background: '#faf7ff', minHeight: '100vh' }}>
 
-      {/* ── SIDEBAR ─────────────────────────────────────────────────── */}
-      <aside
-        className={`flex-shrink-0 transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-16'}`}
-        style={{
-          background: 'linear-gradient(180deg,#ffffff 0%,#faf7ff 100%)',
-          borderRight: '1px solid #e8e0ff',
-          position: 'sticky', top: 0, height: '100vh', overflowY: 'auto',
-          boxShadow: '2px 0 12px rgba(124,58,237,0.06)',
-        }}>
-        <div className="p-4">
+      {/* ── TOAST ──────────────────────────────────────────────────── */}
+      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
 
-          {/* Logo */}
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg,#7c3aed,#ec4899)', color: 'white', boxShadow: '0 4px 12px rgba(124,58,237,0.35)' }}>
-              LGH
-            </div>
-            {sidebarOpen && (
-              <div>
-                <div className="font-semibold text-sm" style={{ fontFamily: 'Sora,sans-serif', color: '#1e1b4b' }}>Let's Get Hired</div>
-                <div className="text-xs font-medium" style={{ color: '#7c3aed' }}>Devanshi · Dublin</div>
+      {/* ── MOBILE OVERLAY SIDEBAR ─────────────────────────────────── */}
+      {mobileMenu && (
+        <div className="mobile-overlay" onClick={() => setMobileMenu(false)}>
+          <div className="mobile-drawer" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: '#e8e0ff' }}>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm"
+                  style={{ background: 'linear-gradient(135deg,#7c3aed,#ec4899)', color: 'white' }}>LGH</div>
+                <div>
+                  <div className="font-semibold text-sm" style={{ color: '#1e1b4b' }}>Let's Get Hired</div>
+                  <div className="text-xs font-medium" style={{ color: '#7c3aed' }}>Devanshi · Dublin</div>
+                </div>
               </div>
-            )}
-            <button onClick={() => setSidebar(!sidebarOpen)} className="ml-auto p-1 rounded-lg"
-              style={{ color: '#a78bfa', background: '#f5f3ff', border: '1px solid #e8e0ff', cursor: 'pointer', lineHeight: 1 }}>
-              <ChevronRight size={12} style={{ transform: sidebarOpen ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
-            </button>
-          </div>
-
-          {/* Motivational quote */}
-          {sidebarOpen && (
-            <div className="mb-4 p-3 rounded-xl text-xs italic leading-relaxed" style={{ background: '#f5f3ff', borderLeft: '3px solid #a78bfa', color: '#4c1d95' }}>
-              "{quote.text}"
-              <div className="mt-1 not-italic font-medium" style={{ color: '#7c3aed' }}>— {quote.author}</div>
+              <button onClick={() => setMobileMenu(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#a78bfa' }}>
+                <X size={20} />
+              </button>
             </div>
-          )}
-
-          {/* Mini stats */}
-          {sidebarOpen && (
-            <div className="grid grid-cols-2 gap-2 mb-5">
-              {[['Tracked', stats.total, '#7c3aed'], ['Applied', stats.applied, '#1d4ed8'], ['Interviews', stats.interviews, '#b45309'], ['Offers', stats.offers, '#15803d']].map(([l, v, c]) => (
-                <div key={l as string} className="p-2 rounded-xl text-center" style={{ background: '#faf7ff', border: '1px solid #e8e0ff' }}>
-                  <div className="text-lg font-semibold" style={{ fontFamily: 'Sora', color: c as string }}>{v as number}</div>
+            <nav className="p-3 space-y-1 overflow-y-auto" style={{ flex: 1 }}>
+              {NAV.map(n => (
+                <button key={n.id} onClick={() => nav(n.id)}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left"
+                  style={{
+                    background: page === n.id ? 'linear-gradient(135deg,#7c3aed,#a855f7)' : 'transparent',
+                    color: page === n.id ? 'white' : '#4c1d95',
+                    border: 'none', cursor: 'pointer',
+                    boxShadow: page === n.id ? '0 3px 10px rgba(124,58,237,0.25)' : 'none',
+                  }}>
+                  {n.icon}<span>{n.label}</span>
+                  {page === n.id && <ChevronRight size={14} className="ml-auto" />}
+                </button>
+              ))}
+            </nav>
+            {/* Quick stats in drawer */}
+            <div className="p-4 border-t grid grid-cols-4 gap-2" style={{ borderColor: '#e8e0ff' }}>
+              {[['Apps', stats.total, '#7c3aed'], ['Applied', stats.applied, '#1d4ed8'], ['Interview', stats.interviews, '#b45309'], ['Offers', stats.offers, '#15803d']].map(([l, v, c]) => (
+                <div key={l as string} className="text-center p-2 rounded-xl" style={{ background: '#f5f3ff' }}>
+                  <div className="text-lg font-bold" style={{ color: c as string }}>{v as number}</div>
                   <div className="text-xs" style={{ color: '#64748b' }}>{l as string}</div>
                 </div>
               ))}
             </div>
-          )}
-
-          {/* Navigation */}
-          <nav className="space-y-1">
-            {NAV.map(n => (
-              <button key={n.id} onClick={() => setPage(n.id)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all"
-                style={{
-                  background: page === n.id ? 'linear-gradient(135deg,#7c3aed,#a855f7)' : 'transparent',
-                  color: page === n.id ? 'white' : '#4c1d95',
-                  border: 'none', cursor: 'pointer', fontFamily: 'DM Sans',
-                  textAlign: 'left',
-                  boxShadow: page === n.id ? '0 3px 10px rgba(124,58,237,0.30)' : 'none',
-                }}>
-                <span className="flex-shrink-0">{n.icon}</span>
-                {sidebarOpen && <span className="font-medium">{n.label}</span>}
-                {sidebarOpen && page === n.id && <ChevronRight size={12} className="ml-auto" />}
-              </button>
-            ))}
-          </nav>
-
-          {/* Quick links */}
-          {sidebarOpen && (
-            <div className="mt-6">
-              <div className="text-xs font-semibold mb-2 px-1 flex items-center gap-1"
-                style={{ color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                <Zap size={10} /> Quick links
-              </div>
-              {[
-                ['Silicon Republic', 'https://www.siliconrepublic.com'],
-                ['LinkedIn Jobs', 'https://www.linkedin.com/jobs/search/?keywords=trust+safety+analyst&location=Dublin'],
-                ['Indeed Ireland', 'https://ie.indeed.com/jobs?q=analyst&l=Dublin&fromage=1'],
-                ['IrishJobs.ie', 'https://www.irishjobs.ie'],
-                ['Otta Dublin', 'https://otta.com/jobs/search?location=Dublin'],
-                ['CPL Recruitment', 'https://www.cpl.com/jobs'],
-              ].map(([l, u]) => (
-                <a key={l} href={u} target="_blank" rel="noreferrer"
-                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors hover:bg-purple-50"
-                  style={{ color: '#64748b', textDecoration: 'none' }}>
-                  <ExternalLink size={10} style={{ color: '#a78bfa', flexShrink: 0 }} />{l}
-                </a>
-              ))}
-            </div>
-          )}
-        </div>
-      </aside>
-
-      {/* ── MAIN ─────────────────────────────────────────────────────── */}
-      <main className="flex-1 overflow-auto p-6" style={{ minWidth: 0 }}>
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg,#7c3aed,#ec4899)' }}>
-                <RefreshCw size={22} className="animate-spin" style={{ color: 'white' }} />
-              </div>
-              <p className="font-medium" style={{ color: '#7c3aed' }}>Loading your job hunt HQ...</p>
-              <p className="text-xs mt-1" style={{ color: '#a78bfa' }}>Connecting to Supabase</p>
-            </div>
           </div>
-        ) : (
-          <>
-            {page === 'dashboard' && <Dashboard stats={stats} apps={apps} tip={tip} />}
-            {page === 'jobs' && <LiveJobs apps={apps} onTrack={refreshApps} />}
-            {page === 'silicon' && <SiliconRepublic />}
-            {page === 'svnews' && <SVNews />}
-            {page === 'companies' && <Companies />}
-            {page === 'portals' && <Portals />}
-            {page === 'agencies' && <Agencies />}
-            {page === 'tracker' && <Tracker apps={apps} onRefresh={refreshApps} />}
-            {page === 'cv' && <CVEditor cv={cv} onSave={setCV} />}
-            {page === 'interview' && <InterviewPrep />}
-            {page === 'plan' && <WeeklyPlan />}
-            {page === 'salary' && <SalaryGuide />}
-          </>
-        )}
-      </main>
+        </div>
+      )}
+
+      <div className="app-layout">
+
+        {/* ── DESKTOP SIDEBAR ──────────────────────────────────────── */}
+        <aside className={`desktop-sidebar ${sidebarOpen ? 'sidebar-wide' : 'sidebar-slim'}`}>
+          <div className="p-4">
+            {/* Logo */}
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
+                style={{ background: 'linear-gradient(135deg,#7c3aed,#ec4899)', color: 'white', boxShadow: '0 4px 12px rgba(124,58,237,0.35)' }}>
+                LGH
+              </div>
+              {sidebarOpen && (
+                <div>
+                  <div className="font-semibold text-sm" style={{ fontFamily: 'Sora,sans-serif', color: '#1e1b4b' }}>Let's Get Hired</div>
+                  <div className="text-xs font-medium flex items-center gap-1" style={{ color: '#7c3aed' }}>
+                    <PulseDot color="#7c3aed" />
+                    <span>Devanshi · Dublin · Live</span>
+                  </div>
+                </div>
+              )}
+              <button onClick={() => setSidebar(!sidebarOpen)} className="ml-auto p-1 rounded-lg"
+                style={{ color: '#a78bfa', background: '#f5f3ff', border: '1px solid #e8e0ff', cursor: 'pointer' }}>
+                <ChevronRight size={12} style={{ transform: sidebarOpen ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
+              </button>
+            </div>
+
+            {sidebarOpen && (
+              <>
+                {/* Quote */}
+                <div className="mb-4 p-3 rounded-xl text-xs italic leading-relaxed" style={{ background: '#f5f3ff', borderLeft: '3px solid #a78bfa', color: '#4c1d95' }}>
+                  "{quote.text}"
+                  <div className="mt-1 not-italic font-medium" style={{ color: '#7c3aed' }}>— {quote.author}</div>
+                </div>
+                {/* Stats */}
+                <div className="grid grid-cols-2 gap-2 mb-5">
+                  {[['Tracked', stats.total, '#7c3aed'], ['Applied', stats.applied, '#1d4ed8'], ['Interviews', stats.interviews, '#b45309'], ['Offers', stats.offers, '#15803d']].map(([l, v, c]) => (
+                    <div key={l as string} className="p-2 rounded-xl text-center" style={{ background: '#faf7ff', border: '1px solid #e8e0ff' }}>
+                      <div className="text-lg font-bold" style={{ fontFamily: 'Sora', color: c as string }}>{v as number}</div>
+                      <div className="text-xs" style={{ color: '#64748b' }}>{l as string}</div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Nav */}
+            <nav className="space-y-1">
+              {NAV.map(n => (
+                <button key={n.id} onClick={() => nav(n.id)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all"
+                  style={{
+                    background: page === n.id ? 'linear-gradient(135deg,#7c3aed,#a855f7)' : 'transparent',
+                    color: page === n.id ? 'white' : '#4c1d95',
+                    border: 'none', cursor: 'pointer', fontFamily: 'DM Sans', textAlign: 'left',
+                    boxShadow: page === n.id ? '0 3px 10px rgba(124,58,237,0.28)' : 'none',
+                  }}>
+                  <span className="flex-shrink-0">{n.icon}</span>
+                  {sidebarOpen && <span className="font-medium">{n.label}</span>}
+                  {sidebarOpen && page === n.id && <ChevronRight size={12} className="ml-auto" />}
+                </button>
+              ))}
+            </nav>
+
+            {sidebarOpen && (
+              <div className="mt-6">
+                <div className="text-xs font-bold mb-2 px-1 flex items-center gap-1 uppercase tracking-wider" style={{ color: '#7c3aed' }}>
+                  <Zap size={10} /> Quick links
+                </div>
+                {[
+                  ['Silicon Republic', 'https://www.siliconrepublic.com'],
+                  ['LinkedIn Jobs', 'https://www.linkedin.com/jobs/search/?keywords=trust+safety+analyst&location=Dublin'],
+                  ['Indeed Ireland', 'https://ie.indeed.com/jobs?q=analyst&l=Dublin&fromage=1'],
+                  ['IrishJobs.ie', 'https://www.irishjobs.ie'],
+                  ['Otta Dublin', 'https://otta.com/jobs/search?location=Dublin'],
+                ].map(([l, u]) => (
+                  <a key={l} href={u} target="_blank" rel="noreferrer"
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors hover:bg-purple-50"
+                    style={{ color: '#64748b', textDecoration: 'none' }}>
+                    <ExternalLink size={10} style={{ color: '#a78bfa', flexShrink: 0 }} />{l}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        </aside>
+
+        {/* ── MAIN CONTENT ─────────────────────────────────────────── */}
+        <div className="main-wrapper">
+          {/* Mobile top bar */}
+          <header className="mobile-topbar">
+            <button onClick={() => setMobileMenu(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', padding: 8 }}>
+              <Menu size={22} />
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold"
+                style={{ background: 'linear-gradient(135deg,#7c3aed,#ec4899)', color: 'white' }}>LGH</div>
+              <span className="font-semibold text-sm" style={{ color: '#1e1b4b' }}>Let's Get Hired</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-medium" style={{ color: '#7c3aed' }}>
+              <PulseDot color="#7c3aed" />
+              <span>Live</span>
+            </div>
+          </header>
+
+          <main className="main-content">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center h-64 gap-4">
+                <div className="w-14 h-14 rounded-full flex items-center justify-center"
+                  style={{ background: 'linear-gradient(135deg,#7c3aed,#ec4899)' }}>
+                  <RefreshCw size={24} className="animate-spin" style={{ color: 'white' }} />
+                </div>
+                <div className="text-center">
+                  <p className="font-semibold" style={{ color: '#7c3aed' }}>Loading your job hunt HQ...</p>
+                  <p className="text-xs mt-1" style={{ color: '#a78bfa' }}>Connecting to Supabase & live feeds</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                {page === 'dashboard' && <Dashboard stats={stats} apps={apps} tip={tip} setPage={nav} liveJobs={liveJobs} liveLastUpdated={liveLastUpdated} liveLoading={liveLoading} />}
+                {page === 'jobs'      && <LiveJobs apps={apps} onTrack={refreshApps} liveJobs={liveJobs} liveLoading={liveLoading} liveLastUpdated={liveLastUpdated} liveNewCount={liveNewCount} liveClearNew={liveClearNew} liveRefresh={liveRefresh} />}
+                {page === 'silicon'   && <SiliconRepublic />}
+                {page === 'svnews'    && <SVNews />}
+                {page === 'companies' && <Companies />}
+                {page === 'portals'   && <Portals />}
+                {page === 'agencies'  && <Agencies />}
+                {page === 'tracker'   && <Tracker apps={apps} onRefresh={refreshApps} />}
+                {page === 'cv'        && <CVEditor cv={cv} onSave={setCV} />}
+                {page === 'interview' && <InterviewPrep />}
+                {page === 'plan'      && <WeeklyPlan />}
+                {page === 'salary'    && <SalaryGuide />}
+              </>
+            )}
+          </main>
+        </div>
+      </div>
+
+      {/* ── MOBILE BOTTOM NAV ────────────────────────────────────────── */}
+      <nav className="bottom-nav">
+        {BOTTOM_NAV.map(n => (
+          <button key={n.id} onClick={() => nav(n.id)}
+            className="bottom-nav-item"
+            style={{ color: page === n.id ? '#7c3aed' : '#9ca3af' }}>
+            <div className="relative">
+              {n.icon}
+            </div>
+            <span>{n.label}</span>
+            {page === n.id && <div className="bottom-nav-dot" />}
+          </button>
+        ))}
+        <button onClick={() => setMobileMenu(true)} className="bottom-nav-item" style={{ color: '#9ca3af' }}>
+          <Menu size={20} />
+          <span>More</span>
+        </button>
+      </nav>
     </div>
   )
 }
@@ -268,73 +466,89 @@ export default function App() {
 // ═══════════════════════════════════════════════════════════════════════════════
 // DASHBOARD
 // ═══════════════════════════════════════════════════════════════════════════════
-function Dashboard({ stats, apps, tip }: { stats: any; apps: Application[]; tip: string }) {
-  const hotJobs = JOBS.filter(j => j.age <= 7).slice(0, 6)
-  const recent = [...apps].sort((a, b) => b.created_at?.localeCompare(a.created_at || '') || 0).slice(0, 5)
+function Dashboard({ stats, apps, tip, setPage, liveJobs, liveLastUpdated, liveLoading }: {
+  stats: any; apps: Application[]; tip: string; setPage: (p: string) => void
+  liveJobs: any[]; liveLastUpdated: string | null; liveLoading: boolean
+}) {
+  const countdown = useCountdown(JOBS_INTERVAL, liveLastUpdated)
+  const hotJobs = liveJobs.length > 0 ? liveJobs.slice(0, 6) : JOBS.filter(j => j.age <= 7).slice(0, 6)
+  const isLive  = liveJobs.length > 0
+  const recent  = [...apps].sort((a, b) => b.created_at?.localeCompare(a.created_at || '') || 0).slice(0, 5)
 
   return (
     <div className="animate-fade-in">
       {/* Hero */}
-      <div className="rounded-2xl p-7 mb-6 relative overflow-hidden"
+      <div className="rounded-2xl p-6 mb-5 relative overflow-hidden"
         style={{ background: 'linear-gradient(135deg,#7c3aed 0%,#a855f7 45%,#ec4899 100%)' }}>
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-1">
-            <Sparkles size={16} style={{ color: '#fde68a' }} />
-            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#fde68a' }}>Job Hunt Command Centre</span>
+            <Sparkles size={14} style={{ color: '#fde68a' }} />
+            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#fde68a' }}>Job Hunt Command Centre · Live</span>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Sora' }}>Let's Get Hired 🚀</h1>
-          <p className="text-sm text-white/80">Dublin · Trust & Safety · AI Analyst · Data Analyst · Product Owner · Business Analyst</p>
+          <h1 className="text-xl font-bold text-white mb-1" style={{ fontFamily: 'Sora' }}>Let's Get Hired 🚀</h1>
+          <p className="text-sm text-white/80">Dublin · Trust & Safety · AI Analyst · Data · PO · BA</p>
         </div>
-        <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full" style={{ background: 'rgba(255,255,255,0.07)' }} />
-        <div className="absolute -right-4 bottom-4 w-24 h-24 rounded-full" style={{ background: 'rgba(255,255,255,0.05)' }} />
+        <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full" style={{ background: 'rgba(255,255,255,0.07)' }} />
       </div>
 
       {/* Tip */}
-      <div className="rounded-xl p-4 mb-6 flex items-start gap-3" style={{ background: '#fffbeb', border: '1px solid #fde68a' }}>
-        <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#fef3c7' }}>
-          <Zap size={13} style={{ color: '#d97706' }} />
-        </div>
+      <div className="rounded-xl p-4 mb-5 flex items-start gap-3" style={{ background: '#fffbeb', border: '1px solid #fde68a' }}>
+        <Zap size={14} style={{ color: '#d97706', flexShrink: 0, marginTop: 2 }} />
         <div>
-          <div className="text-xs font-semibold mb-0.5" style={{ color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Tip of the Day</div>
+          <div className="text-xs font-bold uppercase tracking-wider mb-0.5" style={{ color: '#92400e' }}>Tip of the Day</div>
           <div className="text-sm" style={{ color: '#78350f' }}>{tip}</div>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-5 gap-3 mb-6">
+      {/* Stats grid — 2 cols mobile, 5 desktop */}
+      <div className="stats-grid mb-5">
         {[
-          { l: 'Tracked', v: stats.total, color: '#7c3aed', bg: '#ede9fe' },
-          { l: 'Applied', v: stats.applied, color: '#1d4ed8', bg: '#dbeafe' },
+          { l: 'Tracked',    v: stats.total,      color: '#7c3aed', bg: '#ede9fe' },
+          { l: 'Applied',    v: stats.applied,    color: '#1d4ed8', bg: '#dbeafe' },
           { l: 'Interviews', v: stats.interviews, color: '#b45309', bg: '#fef3c7' },
-          { l: 'Offers', v: stats.offers, color: '#15803d', bg: '#dcfce7' },
+          { l: 'Offers',     v: stats.offers,     color: '#15803d', bg: '#dcfce7' },
           { l: 'Response %', v: `${stats.rate}%`, color: '#7c3aed', bg: '#f5f3ff' },
         ].map(s => (
           <div key={s.l} className="stat-card">
-            <div className="w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center" style={{ background: s.bg }}>
-              <div className="text-lg font-bold" style={{ fontFamily: 'Sora', color: s.color, lineHeight: 1 }}>{s.v}</div>
-            </div>
+            <div className="text-2xl font-bold mb-1" style={{ fontFamily: 'Sora', color: s.color }}>{s.v}</div>
             <div className="text-xs font-medium" style={{ color: '#64748b' }}>{s.l}</div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="dashboard-cols">
         {/* Hot jobs */}
         <div>
-          <h2 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: '#1e1b4b' }}>
-            <span className="badge-hot">HOT</span> Jobs right now
-          </h2>
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: '#1e1b4b' }}>
+              {isLive ? <><PulseDot /><span className="badge-live">LIVE</span></> : <span className="badge-hot">HOT</span>}
+              Jobs right now
+            </h2>
+            <div className="flex items-center gap-2">
+              {liveLoading && <RefreshCw size={11} className="animate-spin" style={{ color: '#a78bfa' }} />}
+              {liveLastUpdated && !liveLoading && (
+                <span className="text-xs" style={{ color: '#a78bfa' }}>
+                  next in {fmt(countdown)}
+                </span>
+              )}
+            </div>
+          </div>
+          {isLive && liveLastUpdated && (
+            <div className="text-xs mb-2 flex items-center gap-1.5" style={{ color: '#15803d' }}>
+              <PulseDot /><span>Updated {new Date(liveLastUpdated).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+          )}
           <div className="space-y-2">
-            {hotJobs.map((j, i) => (
-              <div key={i} className="card p-3">
+            {hotJobs.map((j: any, i: number) => (
+              <div key={j.id || i} className="card p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate" style={{ color: '#1e1b4b' }}>{j.title}</div>
-                    <div className="text-xs mt-1 flex items-center gap-2">
+                    <div className="text-sm font-semibold truncate" style={{ color: '#1e1b4b' }}>{j.title}</div>
+                    <div className="text-xs mt-1 flex items-center gap-2 flex-wrap">
                       <span style={{ color: '#7c3aed', fontWeight: 500 }}>{j.company}</span>
                       <span className="badge-sal">{j.salary}</span>
                     </div>
-                    <div className="text-xs mt-1" style={{ color: '#64748b' }}>{j.posted}</div>
+                    <div className="text-xs mt-1" style={{ color: '#64748b' }}>{j.posted || j.source}</div>
                   </div>
                   <a href={j.url} target="_blank" rel="noreferrer"
                     className="btn-ghost text-xs py-1 px-2 flex-shrink-0 flex items-center gap-1">
@@ -344,11 +558,14 @@ function Dashboard({ stats, apps, tip }: { stats: any; apps: Application[]; tip:
               </div>
             ))}
           </div>
+          <button onClick={() => setPage('jobs')} className="btn-primary w-full mt-3 text-xs py-2 flex items-center justify-center gap-1">
+            <Briefcase size={12} /> View all live jobs
+          </button>
         </div>
 
-        {/* Quick search + recent apps */}
+        {/* Quick search + recent */}
         <div>
-          <h2 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: '#1e1b4b' }}>
+          <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#1e1b4b' }}>
             <Radio size={13} style={{ color: '#7c3aed' }} /> Search now
           </h2>
           <div className="space-y-1 mb-5">
@@ -358,7 +575,6 @@ function Dashboard({ stats, apps, tip }: { stats: any; apps: Application[]; tip:
               ['Indeed - Business Analyst Dublin', 'https://ie.indeed.com/jobs?q=business+analyst&l=Dublin&fromage=1&sort=date'],
               ['Indeed - Product Owner Dublin', 'https://ie.indeed.com/jobs?q=product+owner&l=Dublin&fromage=1&sort=date'],
               ['IrishJobs - Analyst roles', 'https://www.irishjobs.ie/Jobs/analyst/in-Dublin'],
-              ['Otta - Dublin tech', 'https://otta.com/jobs/search?location=Dublin&keywords=analyst'],
               ['Silicon Republic Jobs', 'https://www.siliconrepublic.com/jobs'],
               ['CPL - Analyst Dublin', 'https://www.cpl.com/jobs?searchType=keyword&keyword=analyst&location=Dublin'],
             ].map(([l, u]) => (
@@ -372,20 +588,23 @@ function Dashboard({ stats, apps, tip }: { stats: any; apps: Application[]; tip:
 
           {recent.length > 0 && (
             <>
-              <h2 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: '#1e1b4b' }}>
+              <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#1e1b4b' }}>
                 <Clock size={13} style={{ color: '#7c3aed' }} /> Recent applications
               </h2>
               <div className="space-y-2">
                 {recent.map(a => (
                   <div key={a.id} className="card p-3 flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <div className="text-xs font-medium truncate" style={{ color: '#1e1b4b' }}>{a.title}</div>
+                      <div className="text-xs font-semibold truncate" style={{ color: '#1e1b4b' }}>{a.title}</div>
                       <div className="text-xs mt-0.5 font-medium" style={{ color: '#7c3aed' }}>{a.company} · {a.date_applied}</div>
                     </div>
                     {statusChip(a.status)}
                   </div>
                 ))}
               </div>
+              <button onClick={() => setPage('tracker')} className="btn-ghost w-full mt-3 text-xs py-2 flex items-center justify-center gap-1">
+                <ClipboardList size={12} /> Open full tracker
+              </button>
             </>
           )}
         </div>
@@ -395,14 +614,22 @@ function Dashboard({ stats, apps, tip }: { stats: any; apps: Application[]; tip:
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// LIVE JOBS
+// LIVE JOBS — auto-polls every 60 min
 // ═══════════════════════════════════════════════════════════════════════════════
-function LiveJobs({ apps, onTrack }: { apps: Application[]; onTrack: () => void }) {
-  const [roleF, setRoleF] = useState('All')
-  const [sortF, setSortF] = useState('newest')
+function LiveJobs({ apps, onTrack, liveJobs, liveLoading, liveLastUpdated, liveNewCount, liveClearNew, liveRefresh }: {
+  apps: Application[]; onTrack: () => void
+  liveJobs: any[]; liveLoading: boolean; liveLastUpdated: string | null
+  liveNewCount: number; liveClearNew: () => void; liveRefresh: () => void
+}) {
+  const [roleF, setRoleF]   = useState('All')
+  const [sortF, setSortF]   = useState('newest')
   const [search, setSearch] = useState('')
   const [adding, setAdding] = useState<string | null>(null)
-  const { liveJobs, loading: liveLoading, lastUpdated, refresh } = useLiveJobs()
+  const lastUpdated = liveLastUpdated
+  const newCount    = liveNewCount
+  const clearNew    = liveClearNew
+  const refresh     = liveRefresh
+  const countdown   = useCountdown(JOBS_INTERVAL, lastUpdated)
 
   let jobs = JOBS.filter(j =>
     (roleF === 'All' || j.role === roleF) &&
@@ -417,10 +644,9 @@ function LiveJobs({ apps, onTrack }: { apps: Application[]; onTrack: () => void 
     setAdding(j.title + j.company)
     try {
       await db.addApplication({
-        title: j.title, company: j.company, role_type: j.role,
-        source: j.source, status: 'Saved', date_applied: new Date().toISOString().slice(0, 10),
-        posted_date: j.posted, salary: j.salary, job_url: j.url,
-        contact_name: '', notes: '',
+        title: j.title, company: j.company, role_type: j.role, source: j.source,
+        status: 'Saved', date_applied: new Date().toISOString().slice(0, 10),
+        posted_date: j.posted, salary: j.salary, job_url: j.url, contact_name: '', notes: '',
       })
       await onTrack()
     } finally { setAdding(null) }
@@ -430,10 +656,10 @@ function LiveJobs({ apps, onTrack }: { apps: Application[]; onTrack: () => void 
     setAdding(j.id)
     try {
       await db.addApplication({
-        title: j.title, company: j.company, role_type: 'Trust & Safety',
-        source: j.source, status: 'Saved', date_applied: new Date().toISOString().slice(0, 10),
-        posted_date: j.posted, salary: j.salary, job_url: j.url,
-        contact_name: '', notes: 'Sourced via live job feed',
+        title: j.title, company: j.company, role_type: 'Trust & Safety', source: j.source,
+        status: 'Saved', date_applied: new Date().toISOString().slice(0, 10),
+        posted_date: j.posted, salary: j.salary, job_url: j.url, contact_name: '',
+        notes: 'Sourced via live feed',
       })
       await onTrack()
     } finally { setAdding(null) }
@@ -441,35 +667,60 @@ function LiveJobs({ apps, onTrack }: { apps: Application[]; onTrack: () => void 
 
   return (
     <div className="animate-fade-in">
-      <div className="flex items-start justify-between mb-4">
+      {/* Header + refresh status */}
+      <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
         <div>
           <h1 className="section-header">Live Job Listings · Dublin 2026</h1>
-          <p className="text-sm" style={{ color: '#64748b' }}>Curated roles from company career pages. HOT = posted this week.</p>
+          <p className="text-sm" style={{ color: '#64748b' }}>Curated roles + live feed. HOT = posted this week.</p>
         </div>
-        <button onClick={refresh} disabled={liveLoading}
-          className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1.5">
-          <RefreshCw size={11} className={liveLoading ? 'animate-spin' : ''} />
-          {liveLoading ? 'Fetching...' : 'Fetch live'}
-        </button>
+        <div className="flex flex-col items-end gap-1">
+          <button onClick={() => { clearNew(); refresh() }} disabled={liveLoading}
+            className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1.5">
+            <RefreshCw size={11} className={liveLoading ? 'animate-spin' : ''} />
+            {liveLoading ? 'Fetching...' : newCount > 0 ? `${newCount} new! Refresh` : 'Refresh'}
+          </button>
+          {lastUpdated && (
+            <div className="flex items-center gap-1.5 text-xs" style={{ color: '#a78bfa' }}>
+              <PulseDot color="#7c3aed" />
+              <span>Next update in {fmt(countdown)}</span>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* New jobs notification */}
+      {newCount > 0 && (
+        <div className="rounded-xl p-3 mb-4 flex items-center justify-between gap-3" style={{ background: '#ede9fe', border: '1px solid #a78bfa' }}>
+          <div className="flex items-center gap-2">
+            <Bell size={14} style={{ color: '#7c3aed' }} />
+            <span className="text-sm font-semibold" style={{ color: '#5b21b6' }}>{newCount} new jobs found since last check!</span>
+          </div>
+          <button onClick={() => { clearNew(); refresh() }} className="btn-primary text-xs py-1 px-3">View</button>
+        </div>
+      )}
 
       {/* Live jobs banner */}
       {liveJobs.length > 0 && (
         <div className="rounded-xl p-4 mb-4" style={{ background: '#f0fdf4', border: '1px solid #86efac' }}>
           <div className="flex items-center gap-2 mb-3">
-            <span className="badge-live">LIVE</span>
-            <span className="text-xs font-semibold" style={{ color: '#15803d' }}>
-              {liveJobs.length} jobs pulled from LinkedIn/Indeed/Glassdoor
-              {lastUpdated && <span className="font-normal ml-2 text-green-600">· Updated {new Date(lastUpdated).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}</span>}
+            <PulseDot />
+            <span className="text-xs font-bold" style={{ color: '#15803d' }}>
+              LIVE — {liveJobs.length} jobs from LinkedIn / Indeed / Glassdoor
             </span>
+            {lastUpdated && (
+              <span className="text-xs ml-auto" style={{ color: '#64748b' }}>
+                {new Date(lastUpdated).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
           </div>
           <div className="space-y-2">
-            {liveJobs.slice(0, 5).map((j: any) => (
-              <div key={j.id} className="card p-3" style={{ background: 'white' }}>
-                <div className="flex items-start justify-between gap-3">
+            {liveJobs.slice(0, 6).map((j: any) => (
+              <div key={j.id} className="card p-3">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium" style={{ color: '#1e1b4b' }}>{j.title}</div>
-                    <div className="text-xs mt-1" style={{ color: '#7c3aed' }}>{j.company} · {j.location} · via {j.source}
+                    <div className="text-sm font-semibold" style={{ color: '#1e1b4b' }}>{j.title}</div>
+                    <div className="text-xs mt-1" style={{ color: '#7c3aed' }}>
+                      {j.company} · {j.location} · via {j.source}
                       <span className="badge-sal ml-2">{j.salary}</span>
                     </div>
                     <p className="text-xs mt-1" style={{ color: '#64748b' }}>{j.desc}</p>
@@ -491,19 +742,19 @@ function LiveJobs({ apps, onTrack }: { apps: Application[]; onTrack: () => void 
       )}
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-4">
-        <input className="input flex-1 min-w-48" placeholder="Search jobs or companies..." value={search} onChange={e => setSearch(e.target.value)} />
-        <select className="input w-48" value={roleF} onChange={e => setRoleF(e.target.value)}>
+      <div className="filter-row mb-4">
+        <input className="input flex-1 min-w-0" placeholder="Search jobs or companies..." value={search} onChange={e => setSearch(e.target.value)} />
+        <select className="input" style={{ width: 160 }} value={roleF} onChange={e => setRoleF(e.target.value)}>
           <option>All</option>
           {ROLES.map(r => <option key={r}>{r}</option>)}
         </select>
-        <select className="input w-40" value={sortF} onChange={e => setSortF(e.target.value)}>
+        <select className="input" style={{ width: 140 }} value={sortF} onChange={e => setSortF(e.target.value)}>
           <option value="newest">Newest first</option>
           <option value="salary">Salary (high)</option>
         </select>
       </div>
 
-      <p className="text-xs mb-3" style={{ color: '#a78bfa', fontWeight: 500 }}>{jobs.length} curated roles found</p>
+      <p className="text-xs mb-3 font-medium" style={{ color: '#a78bfa' }}>{jobs.length} curated roles</p>
 
       <div className="space-y-3">
         {jobs.map((j, i) => {
@@ -513,7 +764,7 @@ function LiveJobs({ apps, onTrack }: { apps: Application[]; onTrack: () => void 
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="text-sm font-semibold" style={{ color: '#1e1b4b' }}>{j.title}</span>
+                    <span className="text-sm font-bold" style={{ color: '#1e1b4b' }}>{j.title}</span>
                     {ageBadge(j.age)}
                   </div>
                   <div className="text-xs mb-2 flex items-center gap-2 flex-wrap">
@@ -527,12 +778,11 @@ function LiveJobs({ apps, onTrack }: { apps: Application[]; onTrack: () => void 
                     {roleChip(j.role)}
                   </div>
                 </div>
-                <div className="flex gap-2 flex-shrink-0">
+                <div className="flex gap-2 flex-shrink-0 flex-wrap">
                   <a href={j.url} target="_blank" rel="noreferrer" className="btn-ghost text-xs py-1 px-3 flex items-center gap-1">
                     <ExternalLink size={11} />Open
                   </a>
-                  <button
-                    className="btn-primary text-xs py-1 px-3 flex items-center gap-1"
+                  <button className="btn-primary text-xs py-1 px-3 flex items-center gap-1"
                     onClick={() => !tracked && trackJob(j)}
                     disabled={tracked || adding === j.title + j.company}
                     style={{ opacity: tracked ? 0.5 : 1 }}>
@@ -575,125 +825,108 @@ function SiliconRepublic() {
     <div className="animate-fade-in">
       <h1 className="section-header">Silicon Republic</h1>
       <p className="text-sm mb-4" style={{ color: '#64748b' }}>Irish tech news and Dublin jobs · your daily pulse.</p>
-
-      <div className="flex gap-2 mb-5">
+      <div className="flex gap-2 mb-5 flex-wrap">
         {(['jobs', 'news', 'links'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
-            className="px-4 py-2 rounded-xl text-sm font-medium capitalize transition-all"
+            className="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
             style={{
               background: tab === t ? 'linear-gradient(135deg,#7c3aed,#a855f7)' : '#ffffff',
               color: tab === t ? 'white' : '#7c3aed',
               border: `1px solid ${tab === t ? 'transparent' : '#ddd6fe'}`,
-              cursor: 'pointer', fontFamily: 'DM Sans',
+              cursor: 'pointer',
               boxShadow: tab === t ? '0 3px 10px rgba(124,58,237,0.25)' : 'none',
             }}>
             {t === 'links' ? 'Direct Links' : t === 'jobs' ? 'Dublin Jobs' : 'Tech News'}
           </button>
         ))}
       </div>
-
-      {tab === 'jobs' && (
-        <div className="space-y-2">
-          {srJobs.map((item, i) => (
-            <div key={i} className="card p-4">
-              <a href={item.url} target="_blank" rel="noreferrer"
-                className="text-sm font-semibold hover:underline" style={{ color: '#1e1b4b', textDecoration: 'none' }}>
-                {item.title}
-              </a>
-              <div className="text-xs mt-1 flex items-center gap-2">
-                <span className="chip chip-ts">{item.co}</span>
-                <span style={{ color: '#64748b' }}>{item.dt}</span>
-              </div>
-            </div>
-          ))}
+      {tab === 'jobs' && <div className="space-y-2">{srJobs.map((item, i) => (
+        <div key={i} className="card p-4">
+          <a href={item.url} target="_blank" rel="noreferrer" className="text-sm font-semibold hover:underline" style={{ color: '#1e1b4b', textDecoration: 'none' }}>{item.title}</a>
+          <div className="text-xs mt-1 flex items-center gap-2"><span className="chip chip-ts">{item.co}</span><span style={{ color: '#64748b' }}>{item.dt}</span></div>
         </div>
-      )}
-
-      {tab === 'news' && (
-        <div className="space-y-2">
-          {srNews.map((item, i) => (
-            <div key={i} className="card p-4">
-              <a href={item.url} target="_blank" rel="noreferrer"
-                className="text-sm font-semibold hover:underline" style={{ color: '#1e1b4b', textDecoration: 'none' }}>
-                {item.title}
-              </a>
-              <div className="text-xs mt-1" style={{ color: '#7c3aed' }}>Silicon Republic · {item.dt}</div>
-            </div>
-          ))}
+      ))}</div>}
+      {tab === 'news' && <div className="space-y-2">{srNews.map((item, i) => (
+        <div key={i} className="card p-4">
+          <a href={item.url} target="_blank" rel="noreferrer" className="text-sm font-semibold hover:underline" style={{ color: '#1e1b4b', textDecoration: 'none' }}>{item.title}</a>
+          <div className="text-xs mt-1 font-medium" style={{ color: '#7c3aed' }}>Silicon Republic · {item.dt}</div>
         </div>
-      )}
-
-      {tab === 'links' && (
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            ['AI & Machine Learning', 'https://www.siliconrepublic.com/machines'],
-            ['Jobs in Ireland', 'https://www.siliconrepublic.com/jobs'],
-            ['Dublin tech companies', 'https://www.siliconrepublic.com/companies'],
-            ['Data & Analytics', 'https://www.siliconrepublic.com/data-science'],
-            ['Cybersecurity', 'https://www.siliconrepublic.com/security'],
-            ['Newsletter signup', 'https://www.siliconrepublic.com/newsletter'],
-          ].map(([l, u]) => (
-            <a key={l} href={u} target="_blank" rel="noreferrer"
-              className="card p-3 flex items-center gap-2 text-sm font-medium transition-colors"
-              style={{ color: '#7c3aed', textDecoration: 'none' }}>
-              <ExternalLink size={13} style={{ flexShrink: 0 }} />{l}
-            </a>
-          ))}
-        </div>
-      )}
+      ))}</div>}
+      {tab === 'links' && <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {[['AI & Machine Learning', 'https://www.siliconrepublic.com/machines'], ['Jobs in Ireland', 'https://www.siliconrepublic.com/jobs'],
+          ['Dublin tech companies', 'https://www.siliconrepublic.com/companies'], ['Data & Analytics', 'https://www.siliconrepublic.com/data-science'],
+          ['Cybersecurity', 'https://www.siliconrepublic.com/security'], ['Newsletter signup', 'https://www.siliconrepublic.com/newsletter'],
+        ].map(([l, u]) => (
+          <a key={l} href={u} target="_blank" rel="noreferrer" className="card p-3 flex items-center gap-2 text-sm font-medium" style={{ color: '#7c3aed', textDecoration: 'none' }}>
+            <ExternalLink size={13} style={{ flexShrink: 0 }} />{l}
+          </a>
+        ))}
+      </div>}
     </div>
   )
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SV & AI NEWS (with live RSS fetch)
+// SV & AI NEWS — auto-polls every 30 min
 // ═══════════════════════════════════════════════════════════════════════════════
 function SVNews() {
   const [tagF, setTagF] = useState('All')
-  const { news: liveNews, loading, lastUpdated, refresh } = useLiveNews()
+  const { news: liveNews, loading, lastUpdated, newCount, clearNew, refresh } = useLiveNews()
+  const countdown = useCountdown(NEWS_INTERVAL, lastUpdated)
   const tags = ['All', 'AI', 'T&S', 'Policy', 'Jobs', 'Ireland']
-
   const TAG_CLASS: Record<string, string> = {
     AI: 'tag-ai', Policy: 'tag-policy', Jobs: 'tag-jobs', 'T&S': 'tag-ts',
     Ireland: 'tag-ireland', Funding: 'tag-funding',
   }
-
   const displayNews = liveNews.length > 0 ? liveNews : SV_NEWS
   const isLive = liveNews.length > 0
   const filtered = displayNews.filter((n: any) => tagF === 'All' || n.tag === tagF)
 
   return (
     <div className="animate-fade-in">
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
         <div>
           <h1 className="section-header">AI & Tech News</h1>
-          <p className="text-sm" style={{ color: '#64748b' }}>Silicon Republic · TechCrunch · VentureBeat · live RSS.</p>
+          <p className="text-sm" style={{ color: '#64748b' }}>Silicon Republic · TechCrunch · VentureBeat · live RSS</p>
         </div>
-        <button onClick={refresh} disabled={loading}
-          className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1.5">
-          <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
-          {loading ? 'Fetching...' : 'Refresh'}
-        </button>
+        <div className="flex flex-col items-end gap-1">
+          <button onClick={() => { clearNew(); refresh() }} disabled={loading}
+            className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1.5">
+            <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
+            {loading ? 'Fetching...' : newCount > 0 ? `${newCount} new stories!` : 'Refresh'}
+          </button>
+          {lastUpdated && (
+            <div className="flex items-center gap-1.5 text-xs" style={{ color: '#a78bfa' }}>
+              <PulseDot color="#7c3aed" />
+              <span>Updates in {fmt(countdown)}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* EU AI Act alert */}
       <div className="rounded-xl p-4 mb-4 flex items-start gap-3" style={{ background: '#fffbeb', border: '1px solid #fde68a' }}>
-        <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#fef3c7' }}>
-          <AlertCircle size={13} style={{ color: '#d97706' }} />
-        </div>
+        <AlertCircle size={14} style={{ color: '#d97706', flexShrink: 0, marginTop: 2 }} />
         <div>
-          <div className="text-xs font-semibold mb-0.5" style={{ color: '#92400e', textTransform: 'uppercase' }}>EU AI Act enforcement starts August 2, 2026</div>
+          <div className="text-xs font-bold uppercase tracking-wider mb-0.5" style={{ color: '#92400e' }}>EU AI Act enforcement starts August 2, 2026</div>
           <div className="text-sm" style={{ color: '#78350f' }}>Your EU AI Act knowledge is urgently in demand. Companies are hiring AI governance and T&S analysts at unprecedented speed.</div>
         </div>
       </div>
 
+      {/* New stories notification */}
+      {newCount > 0 && (
+        <div className="rounded-xl p-3 mb-4 flex items-center gap-3" style={{ background: '#ede9fe', border: '1px solid #a78bfa' }}>
+          <Bell size={14} style={{ color: '#7c3aed' }} />
+          <span className="text-sm font-semibold" style={{ color: '#5b21b6' }}>{newCount} new stories since last visit!</span>
+          <button onClick={clearNew} className="btn-primary text-xs py-1 px-2 ml-auto">Dismiss</button>
+        </div>
+      )}
+
       {/* Live status */}
       {isLive && lastUpdated && (
         <div className="flex items-center gap-2 mb-3">
-          <span className="badge-live">LIVE</span>
-          <span className="text-xs" style={{ color: '#15803d' }}>
-            {liveNews.length} stories · updated {new Date(lastUpdated).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}
-          </span>
+          <PulseDot /><span className="badge-live">LIVE</span>
+          <span className="text-xs" style={{ color: '#15803d' }}>{liveNews.length} stories · {new Date(lastUpdated).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
       )}
 
@@ -701,7 +934,7 @@ function SVNews() {
       <div className="flex gap-2 mb-4 flex-wrap">
         {tags.map(t => (
           <button key={t} onClick={() => setTagF(t)}
-            className="px-3 py-1 rounded-full text-xs font-medium transition-all"
+            className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
             style={{
               background: tagF === t ? '#7c3aed' : '#ffffff',
               color: tagF === t ? 'white' : '#7c3aed',
@@ -720,20 +953,14 @@ function SVNews() {
               <div className="flex-1 min-w-0">
                 <a href={item.url} target="_blank" rel="noreferrer"
                   className="text-sm font-semibold hover:underline leading-snug block mb-1"
-                  style={{ color: '#1e1b4b', textDecoration: 'none' }}>
-                  {item.title}
-                </a>
-                <div className="text-xs flex items-center gap-2" style={{ color: '#64748b' }}>
+                  style={{ color: '#1e1b4b', textDecoration: 'none' }}>{item.title}</a>
+                <div className="text-xs flex items-center gap-2 flex-wrap" style={{ color: '#64748b' }}>
                   <span style={{ color: '#7c3aed', fontWeight: 500 }}>{item.source}</span>
                   <span>·</span>
                   <span>{item.date || (item.pubDate ? new Date(item.pubDate).toLocaleDateString('en-IE') : '')}</span>
                 </div>
-                {item.relevance && (
-                  <div className="text-xs mt-1.5 italic" style={{ color: '#5b21b6' }}>Why it matters: {item.relevance}</div>
-                )}
-                {item.desc && !item.relevance && (
-                  <p className="text-xs mt-1.5" style={{ color: '#64748b' }}>{item.desc}</p>
-                )}
+                {item.relevance && <div className="text-xs mt-1.5 italic" style={{ color: '#5b21b6' }}>Why it matters: {item.relevance}</div>}
+                {item.desc && !item.relevance && <p className="text-xs mt-1.5" style={{ color: '#64748b' }}>{item.desc}</p>}
               </div>
               <span className={`${TAG_CLASS[item.tag] || 'tag-ai'} flex-shrink-0`}>{item.tag}</span>
             </div>
@@ -742,19 +969,13 @@ function SVNews() {
       </div>
 
       <div className="mt-6">
-        <h2 className="text-sm font-semibold mb-3" style={{ color: '#1e1b4b' }}>Follow these sources daily</h2>
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            ['TechCrunch AI', 'https://techcrunch.com/category/artificial-intelligence/'],
-            ['VentureBeat AI', 'https://venturebeat.com/category/ai'],
-            ['Silicon Republic', 'https://www.siliconrepublic.com/machines'],
-            ['Wired AI', 'https://www.wired.com/tag/artificial-intelligence/'],
-            ['MIT Tech Review', 'https://www.technologyreview.com/topic/artificial-intelligence/'],
-            ['EU AI Act tracker', 'https://artificialintelligenceact.eu/'],
+        <h2 className="text-sm font-bold mb-3" style={{ color: '#1e1b4b' }}>Follow these sources daily</h2>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {[['TechCrunch AI', 'https://techcrunch.com/category/artificial-intelligence/'], ['VentureBeat AI', 'https://venturebeat.com/category/ai'],
+            ['Silicon Republic', 'https://www.siliconrepublic.com/machines'], ['Wired AI', 'https://www.wired.com/tag/artificial-intelligence/'],
+            ['MIT Tech Review', 'https://www.technologyreview.com/topic/artificial-intelligence/'], ['EU AI Act tracker', 'https://artificialintelligenceact.eu/'],
           ].map(([l, u]) => (
-            <a key={l} href={u} target="_blank" rel="noreferrer"
-              className="card p-3 flex items-center gap-2 text-sm font-medium"
-              style={{ color: '#7c3aed', textDecoration: 'none' }}>
+            <a key={l} href={u} target="_blank" rel="noreferrer" className="card p-3 flex items-center gap-2 text-sm font-medium" style={{ color: '#7c3aed', textDecoration: 'none' }}>
               <ExternalLink size={12} style={{ flexShrink: 0 }} />{l}
             </a>
           ))}
@@ -769,46 +990,40 @@ function SVNews() {
 // ═══════════════════════════════════════════════════════════════════════════════
 function Companies() {
   const cats = ['All', ...Array.from(new Set(COMPANIES.map(c => c.cat)))]
-  const [catF, setCatF] = useState('All')
+  const [catF, setCatF]     = useState('All')
   const [search, setSearch] = useState('')
   const cos = COMPANIES.filter(c => (catF === 'All' || c.cat === catF) && (!search || c.name.toLowerCase().includes(search.toLowerCase())))
   const groups = cats.filter(c => c !== 'All').reduce((acc, cat) => {
-    const items = cos.filter(c => c.cat === cat)
-    if (items.length) acc[cat] = items
-    return acc
+    const items = cos.filter(c => c.cat === cat); if (items.length) acc[cat] = items; return acc
   }, {} as Record<string, typeof COMPANIES>)
 
   return (
     <div className="animate-fade-in">
       <h1 className="section-header">All Companies in Dublin</h1>
-      <p className="text-sm mb-4" style={{ color: '#64748b' }}>{COMPANIES.length} companies with Dublin offices across all sectors.</p>
-      <div className="flex gap-3 mb-4 flex-wrap">
-        <input className="input flex-1 min-w-48" placeholder="Search companies..." value={search} onChange={e => setSearch(e.target.value)} />
-        <select className="input w-44" value={catF} onChange={e => setCatF(e.target.value)}>
+      <p className="text-sm mb-4" style={{ color: '#64748b' }}>{COMPANIES.length} companies with Dublin offices.</p>
+      <div className="filter-row mb-4">
+        <input className="input flex-1 min-w-0" placeholder="Search companies..." value={search} onChange={e => setSearch(e.target.value)} />
+        <select className="input" style={{ width: 160 }} value={catF} onChange={e => setCatF(e.target.value)}>
           {cats.map(c => <option key={c}>{c}</option>)}
         </select>
       </div>
       <p className="text-xs mb-4 font-medium" style={{ color: '#a78bfa' }}>{cos.length} companies shown</p>
-
       {Object.entries(groups).map(([cat, items]) => (
         <div key={cat} className="mb-6">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-2 h-2 rounded-full" style={{ background: CAT_COLORS[cat] || '#7c3aed' }} />
             <h2 className="text-xs font-bold uppercase tracking-wider" style={{ color: CAT_COLORS[cat] || '#7c3aed' }}>{cat} ({items.length})</h2>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="companies-grid">
             {items.map((co, i) => (
               <div key={i} className="card p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0"
-                    style={{ background: CAT_BG[co.cat] || '#f5f3ff', color: CAT_COLORS[co.cat] || '#7c3aed' }}>
-                    {co.abbr}
-                  </div>
+                    style={{ background: CAT_BG[co.cat] || '#f5f3ff', color: CAT_COLORS[co.cat] || '#7c3aed' }}>{co.abbr}</div>
                   <div className="font-semibold text-sm truncate" style={{ color: '#1e1b4b' }}>{co.name}</div>
                 </div>
                 <p className="text-xs mb-2 leading-relaxed" style={{ color: '#64748b' }}>{co.desc}</p>
-                <a href={co.url} target="_blank" rel="noreferrer"
-                  className="text-xs flex items-center gap-1 font-medium hover:underline" style={{ color: '#7c3aed', textDecoration: 'none' }}>
+                <a href={co.url} target="_blank" rel="noreferrer" className="text-xs flex items-center gap-1 font-medium hover:underline" style={{ color: '#7c3aed', textDecoration: 'none' }}>
                   <ExternalLink size={10} />View jobs
                 </a>
               </div>
@@ -825,7 +1040,7 @@ function Companies() {
 // ═══════════════════════════════════════════════════════════════════════════════
 function Portals() {
   const cats = ['All', 'Irish', 'Global', 'Startup', 'Niche']
-  const [catF, setCatF] = useState('All')
+  const [catF, setCatF]     = useState('All')
   const [priOnly, setPriOnly] = useState(false)
   const portals = PORTALS.filter(p => (catF === 'All' || p.cat === catF) && (!priOnly || p.priority))
   const groups: Record<string, typeof PORTALS> = {}
@@ -835,32 +1050,25 @@ function Portals() {
     <div className="animate-fade-in">
       <h1 className="section-header">All Job Portals</h1>
       <p className="text-sm mb-4" style={{ color: '#64748b' }}>{PORTALS.length} portals — Irish, global, startup and niche boards.</p>
-      <div className="flex gap-3 mb-4 flex-wrap items-center">
+      <div className="flex gap-2 mb-4 flex-wrap items-center">
         <div className="flex gap-2 flex-wrap">
           {cats.map(c => (
             <button key={c} onClick={() => setCatF(c)}
-              className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
-              style={{
-                background: catF === c ? '#7c3aed' : '#ffffff',
-                color: catF === c ? 'white' : '#7c3aed',
-                border: `1px solid ${catF === c ? 'transparent' : '#ddd6fe'}`,
-                cursor: 'pointer',
-              }}>
+              className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+              style={{ background: catF === c ? '#7c3aed' : '#ffffff', color: catF === c ? 'white' : '#7c3aed', border: `1px solid ${catF === c ? 'transparent' : '#ddd6fe'}`, cursor: 'pointer' }}>
               {c}
             </button>
           ))}
         </div>
-        <label className="flex items-center gap-2 text-xs cursor-pointer ml-auto font-medium" style={{ color: '#7c3aed' }}>
-          <input type="checkbox" checked={priOnly} onChange={e => setPriOnly(e.target.checked)}
-            className="rounded" style={{ accentColor: '#7c3aed' }} />
+        <label className="flex items-center gap-2 text-xs cursor-pointer ml-auto font-semibold" style={{ color: '#7c3aed' }}>
+          <input type="checkbox" checked={priOnly} onChange={e => setPriOnly(e.target.checked)} style={{ accentColor: '#7c3aed' }} />
           Priority only
         </label>
       </div>
-
       {Object.entries(groups).map(([cat, items]) => (
         <div key={cat} className="mb-6">
           <h2 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#7c3aed' }}>{cat} portals ({items.length})</h2>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="companies-grid">
             {items.map((p, i) => (
               <div key={i} className="card p-3">
                 <div className="flex items-center justify-between mb-1">
@@ -868,8 +1076,7 @@ function Portals() {
                   {p.priority && <span className="badge-pri">TOP</span>}
                 </div>
                 <p className="text-xs mb-2" style={{ color: '#64748b' }}>{p.desc}</p>
-                <a href={p.url} target="_blank" rel="noreferrer"
-                  className="text-xs flex items-center gap-1 font-medium hover:underline" style={{ color: '#7c3aed', textDecoration: 'none' }}>
+                <a href={p.url} target="_blank" rel="noreferrer" className="text-xs flex items-center gap-1 font-medium hover:underline" style={{ color: '#7c3aed', textDecoration: 'none' }}>
                   <ExternalLink size={10} />Search jobs
                 </a>
               </div>
@@ -891,50 +1098,32 @@ function Agencies() {
   const groups: Record<string, typeof AGENCIES> = {}
   agencies.forEach(a => { if (!groups[a.tier]) groups[a.tier] = []; groups[a.tier].push(a) })
   const tierOrder = ['Priority', 'Good', 'Also']
-  const tierLabels: Record<string, string> = {
-    Priority: 'Priority — Register this week',
-    Good: 'Good — Worth registering',
-    Also: 'Also in Dublin',
-  }
+  const tierLabels: Record<string, string> = { Priority: 'Priority — Register this week', Good: 'Good — Worth registering', Also: 'Also in Dublin' }
   const TIER_COLORS: Record<string, string> = { Priority: '#7c3aed', Good: '#1d4ed8', Also: '#64748b' }
 
   return (
     <div className="animate-fade-in">
       <h1 className="section-header">Recruitment Agencies</h1>
       <p className="text-sm mb-3" style={{ color: '#64748b' }}>{AGENCIES.length} agencies — 80% of Dublin tech roles go through agencies first!</p>
-
-      {/* Pitch script */}
       <div className="rounded-xl p-4 mb-4" style={{ background: '#f5f3ff', border: '1px solid #c4b5fd' }}>
         <div className="text-xs font-bold mb-2 uppercase tracking-wider" style={{ color: '#5b21b6' }}>What to say when you contact them</div>
         <p className="text-sm leading-relaxed" style={{ color: '#4c1d95' }}>
-          "Hi, I am a Trust & Safety AI Analyst with 3+ years experience at Meta, including LLM evaluation, abuse detection and content policy.
-          I hold an MSc in Business Analytics from Dublin Business School and am CSPO certified.
-          I am immediately available for permanent roles in Dublin as a T&S Analyst, AI Analyst, Data Analyst, Business Analyst or Product Owner.
-          Salary expectation: EUR55–80k. Can we schedule a call?"
+          "Hi, I am a Trust & Safety AI Analyst with 3+ years experience at Meta, including LLM evaluation, abuse detection and content policy. I hold an MSc in Business Analytics from Dublin Business School and am CSPO certified. I am immediately available for permanent roles in Dublin as a T&S Analyst, AI Analyst, Data Analyst, Business Analyst or Product Owner. Salary expectation: EUR55–80k. Can we schedule a call?"
         </p>
       </div>
-
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2 mb-4 flex-wrap">
         {tiers.map(t => (
           <button key={t} onClick={() => setTierF(t)}
-            className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
-            style={{
-              background: tierF === t ? '#7c3aed' : '#ffffff',
-              color: tierF === t ? 'white' : '#7c3aed',
-              border: `1px solid ${tierF === t ? 'transparent' : '#ddd6fe'}`,
-              cursor: 'pointer',
-            }}>
+            className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+            style={{ background: tierF === t ? '#7c3aed' : '#ffffff', color: tierF === t ? 'white' : '#7c3aed', border: `1px solid ${tierF === t ? 'transparent' : '#ddd6fe'}`, cursor: 'pointer' }}>
             {t}
           </button>
         ))}
       </div>
-
       {tierOrder.filter(t => groups[t]).map(tier => (
         <div key={tier} className="mb-6">
-          <h2 className="text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-2"
-            style={{ color: TIER_COLORS[tier] }}>
-            <div className="w-2 h-2 rounded-full" style={{ background: TIER_COLORS[tier] }} />
-            {tierLabels[tier]} ({groups[tier].length})
+          <h2 className="text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-2" style={{ color: TIER_COLORS[tier] }}>
+            <div className="w-2 h-2 rounded-full" style={{ background: TIER_COLORS[tier] }} />{tierLabels[tier]} ({groups[tier].length})
           </h2>
           <div className="space-y-2">
             {groups[tier].map((a, i) => (
@@ -945,10 +1134,9 @@ function Agencies() {
                     {a.tier === 'Priority' && <span className="badge-pri">PRIORITY</span>}
                   </div>
                   <p className="text-xs" style={{ color: '#64748b' }}>{a.desc}</p>
-                  <p className="text-xs mt-1 font-medium" style={{ color: '#7c3aed' }}>Best for: {a.roles}</p>
+                  <p className="text-xs mt-1 font-semibold" style={{ color: '#7c3aed' }}>Best for: {a.roles}</p>
                 </div>
-                <a href={a.url} target="_blank" rel="noreferrer"
-                  className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1 flex-shrink-0">
+                <a href={a.url} target="_blank" rel="noreferrer" className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1 flex-shrink-0">
                   <ExternalLink size={10} />View jobs
                 </a>
               </div>
@@ -961,15 +1149,15 @@ function Agencies() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// TRACKER
+// TRACKER — applications auto-sync every 2 min
 // ═══════════════════════════════════════════════════════════════════════════════
 function Tracker({ apps, onRefresh }: { apps: Application[]; onRefresh: () => void }) {
   const [showForm, setShowForm] = useState(false)
-  const [statusF, setStatusF] = useState('All')
-  const [roleF, setRoleF] = useState('All')
-  const [search, setSearch] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [statusF, setStatusF]   = useState('All')
+  const [roleF, setRoleF]       = useState('All')
+  const [search, setSearch]     = useState('')
+  const [saving, setSaving]     = useState(false)
+  const [saved, setSaved]       = useState(false)
   const [form, setForm] = useState({
     title: '', company: '', role_type: 'Trust & Safety', source: '', status: 'Saved',
     date_applied: new Date().toISOString().slice(0, 10), posted_date: '',
@@ -986,21 +1174,10 @@ function Tracker({ apps, onRefresh }: { apps: Application[]; onRefresh: () => vo
     if (!form.title || !form.company) return
     setSaving(true)
     try {
-      await db.addApplication(form)
-      await onRefresh()
-      setShowForm(false)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      await db.addApplication(form); await onRefresh(); setShowForm(false); setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
       setForm({ ...form, title: '', company: '', notes: '', source: '', job_url: '', salary: '', contact_name: '' })
     } finally { setSaving(false) }
-  }
-
-  async function del(id: string) {
-    await db.deleteApplication(id); await onRefresh()
-  }
-
-  async function changeStatus(id: string, status: string) {
-    await db.updateApplicationStatus(id, status); await onRefresh()
   }
 
   const stats = {
@@ -1012,12 +1189,12 @@ function Tracker({ apps, onRefresh }: { apps: Application[]; onRefresh: () => vo
 
   return (
     <div className="animate-fade-in">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <div>
           <h1 className="section-header">My Application Tracker</h1>
           <p className="text-sm flex items-center gap-1.5" style={{ color: '#64748b' }}>
-            <CheckCircle size={12} style={{ color: '#15803d' }} />
-            Saved to Supabase — syncs across all devices.
+            <PulseDot color="#15803d" />
+            <span>Saved to Supabase · syncs every 2 min</span>
           </p>
         </div>
         <button className="btn-primary flex items-center gap-2" onClick={() => setShowForm(!showForm)}>
@@ -1026,26 +1203,23 @@ function Tracker({ apps, onRefresh }: { apps: Application[]; onRefresh: () => vo
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-5 gap-2 mb-5">
-        {[
-          ['Total', stats.total, '#7c3aed', '#ede9fe'],
-          ['Applied', stats.applied, '#1d4ed8', '#dbeafe'],
-          ['Interviews', stats.interviews, '#b45309', '#fef3c7'],
-          ['Offers', stats.offers, '#15803d', '#dcfce7'],
+      <div className="tracker-stats mb-5">
+        {[['Total', stats.total, '#7c3aed', '#ede9fe'], ['Applied', stats.applied, '#1d4ed8', '#dbeafe'],
+          ['Interviews', stats.interviews, '#b45309', '#fef3c7'], ['Offers', stats.offers, '#15803d', '#dcfce7'],
           ['Rejected', stats.rejected, '#dc2626', '#fee2e2'],
         ].map(([l, v, c, bg]) => (
-          <div key={l as string} className="rounded-xl p-3 text-center" style={{ background: bg as string, border: `1px solid ${c as string}20` }}>
+          <div key={l as string} className="rounded-xl p-3 text-center" style={{ background: bg as string, border: `1px solid ${(c as string)}30` }}>
             <div className="text-xl font-bold" style={{ fontFamily: 'Sora', color: c as string }}>{v as number}</div>
-            <div className="text-xs mt-1 font-medium" style={{ color: c as string }}>{l as string}</div>
+            <div className="text-xs mt-1 font-semibold" style={{ color: c as string }}>{l as string}</div>
           </div>
         ))}
       </div>
 
-      {/* Saved success */}
+      {/* Success toast */}
       {saved && (
         <div className="rounded-xl p-3 mb-4 flex items-center gap-2" style={{ background: '#dcfce7', border: '1px solid #86efac' }}>
           <CheckCircle size={14} style={{ color: '#15803d' }} />
-          <span className="text-sm font-medium" style={{ color: '#15803d' }}>Application logged to Supabase!</span>
+          <span className="text-sm font-semibold" style={{ color: '#15803d' }}>Application logged to Supabase!</span>
         </div>
       )}
 
@@ -1055,7 +1229,7 @@ function Tracker({ apps, onRefresh }: { apps: Application[]; onRefresh: () => vo
           <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#1e1b4b' }}>
             <Plus size={14} style={{ color: '#7c3aed' }} /> Log New Application
           </h2>
-          <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="form-grid mb-3">
             <input className="input" placeholder="Job title *" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
             <input className="input" placeholder="Company *" value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} />
             <select className="input" value={form.role_type} onChange={e => setForm({ ...form, role_type: e.target.value })}>
@@ -1066,11 +1240,10 @@ function Tracker({ apps, onRefresh }: { apps: Application[]; onRefresh: () => vo
               {STATUSES.map(s => <option key={s}>{s}</option>)}
             </select>
             <input className="input" type="date" value={form.date_applied} onChange={e => setForm({ ...form, date_applied: e.target.value })} />
-            <input className="input" placeholder="Posted date e.g. 3 days ago" value={form.posted_date} onChange={e => setForm({ ...form, posted_date: e.target.value })} />
             <input className="input" placeholder="Salary e.g. EUR60–75k" value={form.salary} onChange={e => setForm({ ...form, salary: e.target.value })} />
-            <input className="input col-span-2" placeholder="Job URL" value={form.job_url} onChange={e => setForm({ ...form, job_url: e.target.value })} />
             <input className="input" placeholder="Contact name" value={form.contact_name} onChange={e => setForm({ ...form, contact_name: e.target.value })} />
-            <textarea className="input col-span-2" placeholder="Notes — interview dates, follow-ups, impressions..." value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} />
+            <input className="input col-span-full" placeholder="Job URL" value={form.job_url} onChange={e => setForm({ ...form, job_url: e.target.value })} />
+            <textarea className="input col-span-full" placeholder="Notes — interview dates, follow-ups, impressions..." value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} />
           </div>
           <button className="btn-primary flex items-center gap-2" onClick={save} disabled={saving || !form.title || !form.company}>
             {saving ? <><RefreshCw size={13} className="animate-spin" />Saving...</> : <><CheckCircle size={13} />Save to database</>}
@@ -1079,58 +1252,55 @@ function Tracker({ apps, onRefresh }: { apps: Application[]; onRefresh: () => vo
       )}
 
       {/* Filters */}
-      <div className="flex gap-3 mb-4 flex-wrap">
-        <input className="input flex-1 min-w-40" placeholder="Search applications..." value={search} onChange={e => setSearch(e.target.value)} />
-        <select className="input w-36" value={statusF} onChange={e => setStatusF(e.target.value)}>
+      <div className="filter-row mb-4">
+        <input className="input flex-1 min-w-0" placeholder="Search applications..." value={search} onChange={e => setSearch(e.target.value)} />
+        <select className="input" style={{ width: 130 }} value={statusF} onChange={e => setStatusF(e.target.value)}>
           <option>All</option>{STATUSES.map(s => <option key={s}>{s}</option>)}
         </select>
-        <select className="input w-40" value={roleF} onChange={e => setRoleF(e.target.value)}>
+        <select className="input" style={{ width: 150 }} value={roleF} onChange={e => setRoleF(e.target.value)}>
           <option>All</option>{ROLES.map(r => <option key={r}>{r}</option>)}
         </select>
       </div>
 
-      {/* Applications list */}
       {filtered.length === 0 ? (
         <div className="text-center py-16 rounded-2xl" style={{ background: '#f5f3ff', border: '1px dashed #c4b5fd' }}>
           <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: '#ede9fe' }}>
             <Briefcase size={24} style={{ color: '#a78bfa' }} />
           </div>
-          <p className="font-medium" style={{ color: '#7c3aed' }}>No applications yet</p>
+          <p className="font-semibold" style={{ color: '#7c3aed' }}>No applications yet</p>
           <p className="text-sm mt-1" style={{ color: '#a78bfa' }}>Click "Log application" to start tracking</p>
         </div>
       ) : (
         <div className="space-y-2">
           {filtered.map(a => (
             <div key={a.id} className="card p-4">
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-start gap-3 flex-wrap">
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold truncate" style={{ color: '#1e1b4b' }}>{a.title}</div>
-                  <div className="text-xs mt-0.5 flex items-center gap-2">
-                    <span style={{ color: '#7c3aed', fontWeight: 500 }}>{a.company}</span>
+                  <div className="text-sm font-bold truncate" style={{ color: '#1e1b4b' }}>{a.title}</div>
+                  <div className="text-xs mt-0.5 flex items-center gap-2 flex-wrap">
+                    <span style={{ color: '#7c3aed', fontWeight: 600 }}>{a.company}</span>
                     {a.salary && <span className="badge-sal">{a.salary}</span>}
                   </div>
                   <div className="text-xs mt-0.5 flex items-center gap-2 flex-wrap" style={{ color: '#64748b' }}>
                     {a.source && <span>{a.source}</span>}
                     <span>Applied: {a.date_applied}</span>
-                    {a.posted_date && <span style={{ color: '#15803d', fontWeight: 500 }}>Posted: {a.posted_date}</span>}
                   </div>
                   {a.notes && <p className="text-xs mt-1 italic" style={{ color: '#64748b' }}>{a.notes}</p>}
                 </div>
                 <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
                   {roleChip(a.role_type)}
-                  <select value={a.status} onChange={e => changeStatus(a.id, e.target.value)}
-                    className="text-xs rounded-xl px-2 py-1.5 border cursor-pointer font-medium"
+                  <select value={a.status} onChange={e => { db.updateApplicationStatus(a.id, e.target.value).then(onRefresh) }}
+                    className="text-xs rounded-xl px-2 py-1.5 border cursor-pointer font-semibold"
                     style={{ background: '#ffffff', borderColor: '#ddd6fe', color: '#7c3aed', fontFamily: 'DM Sans' }}>
                     {STATUSES.map(s => <option key={s}>{s}</option>)}
                   </select>
                   {a.job_url && (
-                    <a href={a.job_url} target="_blank" rel="noreferrer"
-                      className="btn-ghost py-1 px-2 text-xs flex items-center gap-1">
+                    <a href={a.job_url} target="_blank" rel="noreferrer" className="btn-ghost py-1 px-2 text-xs flex items-center gap-1">
                       <ExternalLink size={10} />Open
                     </a>
                   )}
-                  <button onClick={() => del(a.id)}
-                    className="p-1.5 rounded-lg transition-colors hover:bg-red-50"
+                  <button onClick={() => db.deleteApplication(a.id).then(onRefresh)}
+                    className="p-1.5 rounded-lg hover:bg-red-50 transition-colors"
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fca5a5' }}>
                     <Trash2 size={13} />
                   </button>
@@ -1159,7 +1329,8 @@ function CVEditor({ cv, onSave }: { cv: CVData | null; onSave: (cv: CVData) => v
     education: 'MSc Business Analytics — Dublin Business School\nCSPO Certification — Scrum Alliance\nIIT Roorkee PM Certification (in progress)',
   })
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [saved, setSaved]   = useState(false)
+  const [preview, setPreview] = useState(false)
 
   useEffect(() => { if (cv) setForm(cv) }, [cv])
 
@@ -1172,39 +1343,44 @@ function CVEditor({ cv, onSave }: { cv: CVData | null; onSave: (cv: CVData) => v
   function f(key: keyof CVData) {
     return { value: form[key], onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm({ ...form, [key]: e.target.value }) }
   }
-  function bl(t: string) {
-    return t.split('\n').filter(Boolean).map((b, i) => <div key={i} style={{ margin: '2px 0' }}>{b}</div>)
-  }
+  function bl(t: string) { return t.split('\n').filter(Boolean).map((b, i) => <div key={i} style={{ margin: '2px 0' }}>{b}</div>) }
 
   return (
     <div className="animate-fade-in">
-      <h1 className="section-header">CV Editor</h1>
-      <p className="text-sm mb-4" style={{ color: '#64748b' }}>Edit on the left — live preview on the right. Saved to Supabase.</p>
-      <div className="grid grid-cols-2 gap-6">
-        {/* Editor */}
-        <div className="space-y-3">
-          <input className="input" placeholder="Full name" {...f('full_name')} />
-          <input className="input" placeholder="Contact line" {...f('contact_line')} />
-          <textarea className="input" placeholder="Summary" rows={4} {...f('summary')} />
-          <textarea className="input" placeholder="Skills" rows={3} {...f('skills')} />
-          <div className="text-xs font-bold uppercase tracking-wider px-1" style={{ color: '#7c3aed' }}>Experience 1</div>
-          <input className="input" placeholder="Job title" {...f('exp1_title')} />
-          <input className="input" placeholder="Company" {...f('exp1_company')} />
-          <input className="input" placeholder="Dates" {...f('exp1_dates')} />
-          <textarea className="input" placeholder="Bullets (one per line)" rows={4} {...f('exp1_bullets')} />
-          <div className="text-xs font-bold uppercase tracking-wider px-1" style={{ color: '#7c3aed' }}>Experience 2</div>
-          <input className="input" placeholder="Job title" {...f('exp2_title')} />
-          <input className="input" placeholder="Company" {...f('exp2_company')} />
-          <input className="input" placeholder="Dates" {...f('exp2_dates')} />
-          <textarea className="input" placeholder="Bullets" rows={3} {...f('exp2_bullets')} />
-          <textarea className="input" placeholder="Education" rows={3} {...f('education')} />
-          <button className="btn-primary w-full flex items-center justify-center gap-2" onClick={save} disabled={saving}>
-            {saved ? <><CheckCircle size={14} />Saved to Supabase!</> : saving ? <><RefreshCw size={13} className="animate-spin" />Saving...</> : 'Save CV to Supabase'}
-          </button>
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <div>
+          <h1 className="section-header">CV Editor</h1>
+          <p className="text-sm" style={{ color: '#64748b' }}>Edit left · preview right · saved to Supabase.</p>
         </div>
+        <button onClick={() => setPreview(!preview)} className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1.5">
+          {preview ? <><FileText size={12} />Edit</> : <><CheckCircle size={12} />Preview</>}
+        </button>
+      </div>
 
-        {/* Preview */}
-        <div className="rounded-2xl p-6 sticky top-6" style={{ background: 'white', border: '1.5px solid #ede9fe', minHeight: '500px', color: '#1a1a1a', fontSize: '12px', lineHeight: '1.6', boxShadow: '0 4px 24px rgba(124,58,237,0.08)' }}>
+      <div className={preview ? 'cv-preview-only' : 'cv-grid'}>
+        {!preview && (
+          <div className="space-y-3">
+            <input className="input" placeholder="Full name" {...f('full_name')} />
+            <input className="input" placeholder="Contact line" {...f('contact_line')} />
+            <textarea className="input" placeholder="Summary" rows={4} {...f('summary')} />
+            <textarea className="input" placeholder="Skills" rows={3} {...f('skills')} />
+            <div className="text-xs font-bold uppercase tracking-wider px-1" style={{ color: '#7c3aed' }}>Experience 1</div>
+            <input className="input" placeholder="Job title" {...f('exp1_title')} />
+            <input className="input" placeholder="Company" {...f('exp1_company')} />
+            <input className="input" placeholder="Dates" {...f('exp1_dates')} />
+            <textarea className="input" placeholder="Bullets (one per line)" rows={4} {...f('exp1_bullets')} />
+            <div className="text-xs font-bold uppercase tracking-wider px-1" style={{ color: '#7c3aed' }}>Experience 2</div>
+            <input className="input" placeholder="Job title" {...f('exp2_title')} />
+            <input className="input" placeholder="Company" {...f('exp2_company')} />
+            <input className="input" placeholder="Dates" {...f('exp2_dates')} />
+            <textarea className="input" placeholder="Bullets" rows={3} {...f('exp2_bullets')} />
+            <textarea className="input" placeholder="Education" rows={3} {...f('education')} />
+            <button className="btn-primary w-full flex items-center justify-center gap-2" onClick={save} disabled={saving}>
+              {saved ? <><CheckCircle size={14} />Saved!</> : saving ? <><RefreshCw size={13} className="animate-spin" />Saving...</> : 'Save CV to Supabase'}
+            </button>
+          </div>
+        )}
+        <div className="rounded-2xl p-6" style={{ background: 'white', border: '1.5px solid #ede9fe', minHeight: '400px', color: '#1a1a1a', fontSize: '12px', lineHeight: '1.6', boxShadow: '0 4px 24px rgba(124,58,237,0.08)' }}>
           <div style={{ fontFamily: 'Sora', fontSize: '20px', fontWeight: '700', color: '#1e1b4b' }}>{form.full_name}</div>
           <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '12px' }}>{form.contact_line}</div>
           {[{ h: 'Summary', t: form.summary }, { h: 'Skills', t: form.skills }].map(s => (
@@ -1214,10 +1390,8 @@ function CVEditor({ cv, onSave }: { cv: CVData | null; onSave: (cv: CVData) => v
             </div>
           ))}
           <div style={{ fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1.2px', color: '#7c3aed', borderBottom: '1.5px solid #ede9fe', margin: '10px 0 5px', paddingBottom: '2px' }}>Experience</div>
-          {[
-            { t: form.exp1_title, c: form.exp1_company, d: form.exp1_dates, b: form.exp1_bullets },
-            { t: form.exp2_title, c: form.exp2_company, d: form.exp2_dates, b: form.exp2_bullets },
-          ].map((e, i) => (
+          {[{ t: form.exp1_title, c: form.exp1_company, d: form.exp1_dates, b: form.exp1_bullets },
+            { t: form.exp2_title, c: form.exp2_company, d: form.exp2_dates, b: form.exp2_bullets }].map((e, i) => (
             <div key={i} style={{ marginBottom: '10px' }}>
               <div style={{ fontWeight: '600', fontSize: '12px' }}>{e.t} — {e.c}</div>
               <div style={{ fontSize: '10px', color: '#a78bfa', marginBottom: '3px' }}>{e.d}</div>
@@ -1270,33 +1444,24 @@ function InterviewPrep() {
   return (
     <div className="animate-fade-in">
       <h1 className="section-header">Interview Prep</h1>
-      <p className="text-sm mb-4" style={{ color: '#64748b' }}>STAR answers tailored to your background. Expand each question.</p>
-
+      <p className="text-sm mb-4" style={{ color: '#64748b' }}>STAR answers tailored to your background. Tap each question.</p>
       <div className="flex gap-2 mb-4 flex-wrap">
         {companies.map((c, i) => (
           <button key={c} onClick={() => { setTab(i); setOpen(null) }}
-            className="px-4 py-2 rounded-xl text-sm font-medium transition-all"
-            style={{
-              background: tab === i ? 'linear-gradient(135deg,#7c3aed,#a855f7)' : '#ffffff',
-              color: tab === i ? 'white' : '#7c3aed',
-              border: `1px solid ${tab === i ? 'transparent' : '#ddd6fe'}`,
-              cursor: 'pointer', fontFamily: 'DM Sans',
-              boxShadow: tab === i ? '0 3px 10px rgba(124,58,237,0.25)' : 'none',
-            }}>
+            className="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+            style={{ background: tab === i ? 'linear-gradient(135deg,#7c3aed,#a855f7)' : '#ffffff', color: tab === i ? 'white' : '#7c3aed', border: `1px solid ${tab === i ? 'transparent' : '#ddd6fe'}`, cursor: 'pointer', boxShadow: tab === i ? '0 3px 10px rgba(124,58,237,0.25)' : 'none' }}>
             {c}
           </button>
         ))}
       </div>
-
       <div className="space-y-2 mb-6">
         {qa[tab].map(([q, a], i) => (
           <div key={i} className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <button className="w-full text-left px-4 py-3.5 flex items-center justify-between gap-3"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans' }}
+            <button className="w-full text-left px-4 py-4 flex items-center justify-between gap-3"
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
               onClick={() => setOpen(open === i ? null : i)}>
               <span className="text-sm font-semibold" style={{ color: '#1e1b4b' }}>? {q}</span>
-              <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ background: open === i ? '#ede9fe' : '#f5f3ff' }}>
+              <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#f5f3ff' }}>
                 <span style={{ color: '#7c3aed', fontSize: '14px', lineHeight: 1 }}>{open === i ? '−' : '+'}</span>
               </div>
             </button>
@@ -1309,21 +1474,18 @@ function InterviewPrep() {
           </div>
         ))}
       </div>
-
       <div className="rounded-xl p-4 mb-4" style={{ background: '#f0fdf4', border: '1px solid #86efac' }}>
         <div className="text-xs font-bold mb-1 uppercase tracking-wider" style={{ color: '#15803d' }}>STAR reminder</div>
-        <p className="text-sm" style={{ color: '#166534' }}>Situation → Task → Action → Result. Always end with a measurable outcome and what you learned.</p>
+        <p className="text-sm" style={{ color: '#166534' }}>Situation → Task → Action → Result. Always end with a measurable outcome.</p>
       </div>
-
       <div className="card p-4">
         <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#1e1b4b' }}>
           <Star size={13} style={{ color: '#f59e0b' }} /> Your unique selling points
         </h2>
-        {[
-          'Rare combo: LLM evaluation + T&S operations + data analysis — very few people have all three',
-          'EMEA market ownership: autonomous policy decisions for a region across 4 markets',
+        {['Rare combo: LLM evaluation + T&S operations + data analysis — very few have all three',
+          'EMEA market ownership: autonomous policy decisions across 4 markets',
           'EU AI Act awareness: directly relevant for OpenAI, Google, TikTok Dublin RIGHT NOW',
-          'MSc Business Analytics: signals data fluency beyond just operations',
+          'MSc Business Analytics: signals data fluency beyond operations',
           'CSPO certified: product thinking on top of analyst skills',
           'Immediately available: top of recruiter shortlists',
         ].map((p, i) => (
@@ -1338,147 +1500,107 @@ function InterviewPrep() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// WEEKLY PLAN
+// 4-WEEK PLAN
 // ═══════════════════════════════════════════════════════════════════════════════
 function WeeklyPlan() {
   const weeks = [
-    {
-      title: 'Daily — do these every single day',
-      color: '#7c3aed', bg: '#ede9fe',
-      tasks: [
-        { t: 'Check LinkedIn jobs — T&S + AI Analyst + Dublin — filter past 24h', url: 'https://www.linkedin.com/jobs/search/?keywords=trust+safety+analyst&location=Dublin&f_TPR=r86400' },
-        { t: 'Check Indeed Ireland — analyst + Dublin — sorted by date', url: 'https://ie.indeed.com/jobs?q=trust+safety+analyst+OR+AI+analyst+OR+business+analyst&l=Dublin&fromage=1&sort=date' },
-        { t: 'Read Silicon Republic — 5 minutes of Irish tech news', url: 'https://www.siliconrepublic.com' },
-        { t: 'Send at least 2 applications', url: null },
-        { t: 'Follow up any outstanding applications over 5 days old', url: null },
-      ],
-    },
-    {
-      title: 'Week 1 — Foundation',
-      color: '#1d4ed8', bg: '#dbeafe',
-      tasks: [
-        { t: 'Update LinkedIn headline: Trust & Safety AI Analyst | LLM Evaluation | Immediately Available | Dublin', url: null },
-        { t: 'Set LinkedIn to Open to Work (visible to recruiters only)', url: null },
-        { t: 'Register with CPL Recruitment — send CV', url: 'https://www.cpl.com/jobs' },
-        { t: 'Register with Morgan McKinley — send CV', url: 'https://www.morganmckinley.com/ie/jobs' },
-        { t: 'Register with Sigmar Recruitment — send CV', url: 'https://www.sigmarrecruitment.com/' },
-        { t: 'Register with Mason Alexander — send CV', url: 'https://www.masonalexander.ie/jobs' },
-        { t: 'Apply to OpenAI Trust & Safety Operations Analyst — TOP PRIORITY', url: 'https://openai.com/careers/trust-and-safety-operations-analyst-2/' },
-        { t: 'Apply to TikTok Reporting & Insights Analyst — Youth Safety', url: 'https://careers.tiktok.com/position?location=CT_211&query=analyst' },
-        { t: 'Apply to Meta GRO Intelligence Analyst', url: 'https://www.metacareers.com/jobs?offices=Dublin&q=trust+integrity' },
-        { t: 'Set up daily job alerts on LinkedIn, Indeed, IrishJobs', url: null },
-      ],
-    },
-    {
-      title: 'Week 2 — Expand',
-      color: '#0369a1', bg: '#e0f2fe',
-      tasks: [
-        { t: 'Register with Hays, Archer Recruitment, Solas IT and IT Search', url: null },
-        { t: 'Apply to Google Engineering Analyst — AI Safety', url: 'https://careers.google.com/jobs/results/99432678838674118-engineering-analyst/' },
-        { t: 'Apply to Accenture Trust & Safety Team Lead', url: 'https://www.accenture.com/ie-en/careers/jobsearch?jk=trust+safety&cl=Dublin' },
-        { t: 'Apply to EY Business Analyst — Financial Services', url: 'https://www.ey.com/en_ie/careers' },
-        { t: 'Apply to Deloitte Technology Business Analyst', url: 'https://apply.deloitte.com/careers/SearchJobs/analyst?3_56_3=5440' },
-        { t: 'Apply to AI Governance Analyst — Irish Life', url: 'https://www.irishjobs.ie/Jobs/analyst/in-Dublin' },
-        { t: 'Connect with 5 hiring managers on LinkedIn — T&S and AI teams', url: null },
-        { t: 'Follow up all Week 1 applications that have not replied', url: null },
-        { t: 'Create Wellfound profile and set job preferences', url: 'https://wellfound.com/jobs?location=dublin' },
-      ],
-    },
-    {
-      title: 'Week 3 — Go deeper',
-      color: '#b45309', bg: '#fef3c7',
-      tasks: [
-        { t: 'Apply to Whatnot Senior Manager — Trust & Safety', url: 'https://www.whatnot.com/careers' },
-        { t: 'Apply to LILT Product Owner — Localization AI', url: 'https://lilt.com/careers' },
-        { t: 'Apply to Intercom Data Analyst', url: 'https://www.intercom.com/careers' },
-        { t: 'Apply to Salesforce Policy Operations Analyst — Slack', url: 'https://careers.salesforce.com/en/jobs/?search=analyst&location=Dublin' },
-        { t: 'Apply to Bank of Ireland Product Owner — Digital Banking', url: 'https://careers.bankofireland.com' },
-        { t: 'Follow up ALL Weeks 1 & 2 applications — brief check-in email', url: null },
-        { t: 'Research EU AI Act — prepare 3 talking points for interviews', url: 'https://artificialintelligenceact.eu/' },
-        { t: 'Do 2 mock STAR interviews — record yourself on phone', url: null },
-      ],
-    },
-    {
-      title: 'Week 4 — Close and convert',
-      color: '#be185d', bg: '#fce7f3',
-      tasks: [
-        { t: 'Follow up every single application from Weeks 1–3', url: null },
-        { t: 'Ask every agency: do you have anything new this week?', url: null },
-        { t: 'Apply to 10 new roles from Built In Dublin', url: 'https://builtindublin.ie/jobs' },
-        { t: 'Apply via new roles posted on Silicon Republic Jobs', url: 'https://www.siliconrepublic.com/jobs' },
-        { t: 'Post on LinkedIn about your job search — your network can help', url: null },
-        { t: 'Ask former colleagues for LinkedIn recommendations', url: null },
-        { t: 'Prepare 2–3 references ready to share immediately if asked', url: null },
-      ],
-    },
+    { title: 'Daily — do these every single day', color: '#7c3aed', bg: '#ede9fe', tasks: [
+      { t: 'Check LinkedIn jobs — T&S + AI Analyst + Dublin — filter past 24h', url: 'https://www.linkedin.com/jobs/search/?keywords=trust+safety+analyst&location=Dublin&f_TPR=r86400' },
+      { t: 'Check Indeed Ireland — analyst + Dublin — sorted by date', url: 'https://ie.indeed.com/jobs?q=trust+safety+analyst+OR+AI+analyst+OR+business+analyst&l=Dublin&fromage=1&sort=date' },
+      { t: 'Read Silicon Republic — 5 minutes of Irish tech news', url: 'https://www.siliconrepublic.com' },
+      { t: 'Send at least 2 applications', url: null },
+      { t: 'Follow up any outstanding applications over 5 days old', url: null },
+    ]},
+    { title: 'Week 1 — Foundation', color: '#1d4ed8', bg: '#dbeafe', tasks: [
+      { t: 'Update LinkedIn headline: Trust & Safety AI Analyst | LLM Evaluation | Immediately Available | Dublin', url: null },
+      { t: 'Set LinkedIn to Open to Work (visible to recruiters only)', url: null },
+      { t: 'Register with CPL Recruitment — send CV', url: 'https://www.cpl.com/jobs' },
+      { t: 'Register with Morgan McKinley — send CV', url: 'https://www.morganmckinley.com/ie/jobs' },
+      { t: 'Register with Sigmar Recruitment — send CV', url: 'https://www.sigmarrecruitment.com/' },
+      { t: 'Register with Mason Alexander — send CV', url: 'https://www.masonalexander.ie/jobs' },
+      { t: 'Apply to OpenAI Trust & Safety Operations Analyst — TOP PRIORITY', url: 'https://openai.com/careers/trust-and-safety-operations-analyst-2/' },
+      { t: 'Apply to TikTok Reporting & Insights Analyst — Youth Safety', url: 'https://careers.tiktok.com/position?location=CT_211&query=analyst' },
+      { t: 'Apply to Meta GRO Intelligence Analyst', url: 'https://www.metacareers.com/jobs?offices=Dublin&q=trust+integrity' },
+      { t: 'Set up daily job alerts on LinkedIn, Indeed, IrishJobs', url: null },
+    ]},
+    { title: 'Week 2 — Expand', color: '#0369a1', bg: '#e0f2fe', tasks: [
+      { t: 'Register with Hays, Archer Recruitment, Solas IT and IT Search', url: null },
+      { t: 'Apply to Google Engineering Analyst — AI Safety', url: 'https://careers.google.com/jobs/results/99432678838674118-engineering-analyst/' },
+      { t: 'Apply to Accenture Trust & Safety Team Lead', url: 'https://www.accenture.com/ie-en/careers/jobsearch?jk=trust+safety&cl=Dublin' },
+      { t: 'Apply to EY Business Analyst — Financial Services', url: 'https://www.ey.com/en_ie/careers' },
+      { t: 'Apply to Deloitte Technology Business Analyst', url: 'https://apply.deloitte.com/careers/SearchJobs/analyst?3_56_3=5440' },
+      { t: 'Apply to AI Governance Analyst — Irish Life', url: 'https://www.irishjobs.ie/Jobs/analyst/in-Dublin' },
+      { t: 'Connect with 5 hiring managers on LinkedIn — T&S and AI teams', url: null },
+      { t: 'Follow up all Week 1 applications that have not replied', url: null },
+      { t: 'Create Wellfound profile and set job preferences', url: 'https://wellfound.com/jobs?location=dublin' },
+    ]},
+    { title: 'Week 3 — Go deeper', color: '#b45309', bg: '#fef3c7', tasks: [
+      { t: 'Apply to Whatnot Senior Manager — Trust & Safety', url: 'https://www.whatnot.com/careers' },
+      { t: 'Apply to LILT Product Owner — Localization AI', url: 'https://lilt.com/careers' },
+      { t: 'Apply to Intercom Data Analyst', url: 'https://www.intercom.com/careers' },
+      { t: 'Apply to Salesforce Policy Operations Analyst — Slack', url: 'https://careers.salesforce.com/en/jobs/?search=analyst&location=Dublin' },
+      { t: 'Apply to Bank of Ireland Product Owner — Digital Banking', url: 'https://careers.bankofireland.com' },
+      { t: 'Follow up ALL Weeks 1 & 2 applications — brief check-in email', url: null },
+      { t: 'Research EU AI Act — prepare 3 talking points for interviews', url: 'https://artificialintelligenceact.eu/' },
+      { t: 'Do 2 mock STAR interviews — record yourself on phone', url: null },
+    ]},
+    { title: 'Week 4 — Close and convert', color: '#be185d', bg: '#fce7f3', tasks: [
+      { t: 'Follow up every single application from Weeks 1–3', url: null },
+      { t: 'Ask every agency: do you have anything new this week?', url: null },
+      { t: 'Apply to 10 new roles from Built In Dublin', url: 'https://builtindublin.ie/jobs' },
+      { t: 'Apply via new roles posted on Silicon Republic Jobs', url: 'https://www.siliconrepublic.com/jobs' },
+      { t: 'Post on LinkedIn about your job search — your network can help', url: null },
+      { t: 'Ask former colleagues for LinkedIn recommendations', url: null },
+      { t: 'Prepare 2–3 references ready to share immediately if asked', url: null },
+    ]},
   ]
-
   const [checked, setChecked] = useState<Set<string>>(new Set())
-  function toggle(key: string) {
-    const n = new Set(checked); n.has(key) ? n.delete(key) : n.add(key); setChecked(n)
-  }
-
+  function toggle(key: string) { const n = new Set(checked); n.has(key) ? n.delete(key) : n.add(key); setChecked(n) }
   const totalTasks = weeks.reduce((s, w) => s + w.tasks.length, 0)
-  const doneTasks = checked.size
+  const doneTasks  = checked.size
   const pct = totalTasks ? Math.round(doneTasks / totalTasks * 100) : 0
 
   return (
     <div className="animate-fade-in">
       <h1 className="section-header">4-Week Job Search Plan</h1>
       <p className="text-sm mb-4" style={{ color: '#64748b' }}>Follow this plan to maximise your chances of getting hired within a month.</p>
-
-      {/* Progress */}
       <div className="rounded-xl p-4 mb-5" style={{ background: '#f5f3ff', border: '1px solid #c4b5fd' }}>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-semibold" style={{ color: '#4c1d95' }}>Overall progress</span>
+          <span className="text-sm font-bold" style={{ color: '#4c1d95' }}>Overall progress</span>
           <span className="text-sm font-bold" style={{ color: '#7c3aed' }}>{doneTasks}/{totalTasks} tasks · {pct}%</span>
         </div>
-        <div className="w-full h-2.5 rounded-full" style={{ background: '#e8e0ff' }}>
-          <div className="h-2.5 rounded-full transition-all duration-500"
-            style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#7c3aed,#ec4899)' }} />
+        <div className="w-full h-3 rounded-full" style={{ background: '#e8e0ff' }}>
+          <div className="h-3 rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#7c3aed,#ec4899)' }} />
         </div>
       </div>
-
       <div className="rounded-xl p-4 mb-5" style={{ background: '#fffbeb', borderLeft: '4px solid #f59e0b' }}>
         <p className="text-sm italic" style={{ color: '#78350f', lineHeight: '1.6' }}>
           The candidates who get hired fastest are not the ones with the best CV — they are the ones who are most systematic, most persistent, and most visible. This plan makes you that person.
         </p>
       </div>
-
       <div className="space-y-4">
         {weeks.map((w, wi) => {
           const doneCount = w.tasks.filter((_, i) => checked.has(`${wi}-${i}`)).length
           return (
             <div key={wi} className="card p-4">
-              <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center gap-3 mb-2">
                 <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: w.color }} />
                 <h2 className="text-sm font-bold" style={{ color: '#1e1b4b' }}>{w.title}</h2>
-                <div className="ml-auto flex items-center gap-2">
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: w.bg, color: w.color }}>
-                    {doneCount}/{w.tasks.length}
-                  </span>
-                </div>
+                <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: w.bg, color: w.color }}>{doneCount}/{w.tasks.length}</span>
               </div>
-              {/* mini progress */}
               <div className="w-full h-1.5 rounded-full mb-3" style={{ background: '#f1f5f9' }}>
-                <div className="h-1.5 rounded-full transition-all duration-300"
-                  style={{ width: `${w.tasks.length ? doneCount / w.tasks.length * 100 : 0}%`, background: w.color }} />
+                <div className="h-1.5 rounded-full transition-all duration-300" style={{ width: `${w.tasks.length ? doneCount / w.tasks.length * 100 : 0}%`, background: w.color }} />
               </div>
               <div className="space-y-2">
                 {w.tasks.map((task, ti) => {
-                  const key = `${wi}-${ti}`
-                  const done = checked.has(key)
+                  const key = `${wi}-${ti}`; const done = checked.has(key)
                   return (
                     <div key={ti} className="flex items-start gap-3">
-                      <input type="checkbox" checked={done} onChange={() => toggle(key)}
-                        className="mt-0.5 flex-shrink-0" style={{ accentColor: w.color }} />
+                      <input type="checkbox" checked={done} onChange={() => toggle(key)} style={{ accentColor: w.color, marginTop: 3, flexShrink: 0 }} />
                       <div className="flex-1 flex items-center justify-between gap-2 flex-wrap">
-                        <span className="text-sm" style={{ color: done ? '#9ca3af' : '#1e1b4b', textDecoration: done ? 'line-through' : 'none' }}>
-                          {task.t}
-                        </span>
+                        <span className="text-sm" style={{ color: done ? '#9ca3af' : '#1e1b4b', textDecoration: done ? 'line-through' : 'none' }}>{task.t}</span>
                         {task.url && (
-                          <a href={task.url} target="_blank" rel="noreferrer"
-                            className="text-xs flex items-center gap-1 flex-shrink-0 font-medium" style={{ color: w.color, textDecoration: 'none' }}>
+                          <a href={task.url} target="_blank" rel="noreferrer" className="text-xs flex items-center gap-1 font-semibold flex-shrink-0" style={{ color: w.color, textDecoration: 'none' }}>
                             <ExternalLink size={10} />Go
                           </a>
                         )}
@@ -1491,11 +1613,10 @@ function WeeklyPlan() {
           )
         })}
       </div>
-
       <div className="rounded-xl p-4 mt-4" style={{ background: '#f0fdf4', border: '1px solid #86efac' }}>
         <div className="text-xs font-bold mb-1 uppercase tracking-wider" style={{ color: '#15803d' }}>The numbers game</div>
         <p className="text-sm" style={{ color: '#166534', lineHeight: '1.6' }}>
-          In Dublin tech, a typical pipeline: 40 applications → 8 recruiter calls → 4 first interviews → 2 second interviews → 1 offer. If you follow this 4-week plan, you can hit those numbers. Keep going, Devanshi.
+          In Dublin tech: 40 applications → 8 recruiter calls → 4 first interviews → 2 second interviews → 1 offer. You can hit those numbers. Keep going, Devanshi.
         </p>
       </div>
     </div>
@@ -1526,66 +1647,39 @@ function SalaryGuide() {
   return (
     <div className="animate-fade-in">
       <h1 className="section-header">Dublin Salary Guide 2026</h1>
-      <p className="text-sm mb-4" style={{ color: '#64748b' }}>Salary ranges for your target roles in Dublin tech companies.</p>
-
-      {/* Target highlight */}
+      <p className="text-sm mb-4" style={{ color: '#64748b' }}>Salary ranges for your target roles in Dublin.</p>
       <div className="rounded-xl p-4 mb-5" style={{ background: 'linear-gradient(135deg,#f5f3ff,#fce7f3)', border: '1px solid #c4b5fd' }}>
         <div className="text-xs font-bold mb-1 uppercase tracking-wider" style={{ color: '#5b21b6' }}>Devanshi's target range</div>
-        <p className="text-sm" style={{ color: '#4c1d95' }}>
-          Based on your 3+ years T&S experience, MSc and CSPO cert, you should be targeting{' '}
-          <strong style={{ color: '#7c3aed' }}>EUR55,000–EUR80,000</strong> depending on seniority and company size. Do not undersell yourself.
-        </p>
+        <p className="text-sm" style={{ color: '#4c1d95' }}>Based on your 3+ years T&S experience, MSc and CSPO cert — target <strong style={{ color: '#7c3aed' }}>EUR55,000–EUR80,000</strong>. Do not undersell yourself.</p>
       </div>
-
-      {/* Table */}
       <div className="rounded-2xl overflow-hidden mb-5" style={{ border: '1px solid #e8e0ff', boxShadow: '0 2px 12px rgba(124,58,237,0.06)' }}>
-        <table className="w-full text-sm">
-          <thead>
-            <tr style={{ background: '#f5f3ff' }}>
-              {['Role', 'Level', 'Salary', 'Example Companies'].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: '#7c3aed' }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, i) => (
-              <tr key={i} style={{ background: i % 2 === 0 ? '#ffffff' : '#faf7ff', borderTop: '1px solid #e8e0ff' }}>
-                <td className="px-4 py-3 font-medium" style={{ color: '#1e1b4b' }}>{row[0]}</td>
-                <td className="px-4 py-3">
-                  <span className={`chip ${row[1] === 'Senior' ? 'chip-ts' : 'chip-da'}`}>{row[1]}</span>
-                </td>
-                <td className="px-4 py-3 font-bold" style={{ color: '#7c3aed' }}>{row[2]}</td>
-                <td className="px-4 py-3 text-xs" style={{ color: '#64748b' }}>{row[3]}</td>
+        <div className="salary-table-wrap">
+          <table className="w-full text-sm" style={{ minWidth: 500 }}>
+            <thead>
+              <tr style={{ background: '#f5f3ff' }}>
+                {['Role', 'Level', 'Salary', 'Example Companies'].map(h => (
+                  <th key={h} className="text-left px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: '#7c3aed' }}>{h}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={i} style={{ background: i % 2 === 0 ? '#ffffff' : '#faf7ff', borderTop: '1px solid #e8e0ff' }}>
+                  <td className="px-4 py-3 font-semibold" style={{ color: '#1e1b4b' }}>{row[0]}</td>
+                  <td className="px-4 py-3"><span className={`chip ${row[1] === 'Senior' ? 'chip-ts' : 'chip-da'}`}>{row[1]}</span></td>
+                  <td className="px-4 py-3 font-bold" style={{ color: '#7c3aed' }}>{row[2]}</td>
+                  <td className="px-4 py-3 text-xs" style={{ color: '#64748b' }}>{row[3]}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-
-      <h2 className="text-sm font-bold mb-3" style={{ color: '#1e1b4b' }}>Salary benchmarking resources</h2>
-      <div className="grid grid-cols-2 gap-2 mb-5">
-        {[
-          ['Sigmar 2026 Salary Guide', 'https://www.sigmarrecruitment.com/salary-guide/'],
-          ['Hays Ireland 2026', 'https://www.hays.ie/salary-guide'],
-          ['Mason Alexander 2026 Tech Salary Guide', 'https://www.masonalexander.ie/salary-guide'],
-          ['IT Search 2026 Salary Guide', 'https://itsearch.ie/salary-guide/'],
-          ['Glassdoor — T&S Salaries Dublin', 'https://www.glassdoor.ie/Salaries/dublin-trust-and-safety-analyst-salary-SRCH_IL.0,6_IM1078_KO7,31.htm'],
-          ['LinkedIn Salary Insights', 'https://www.linkedin.com/salary/'],
-        ].map(([l, u]) => (
-          <a key={l} href={u} target="_blank" rel="noreferrer"
-            className="card p-3 flex items-center gap-2 text-sm font-medium"
-            style={{ color: '#7c3aed', textDecoration: 'none' }}>
-            <ExternalLink size={12} style={{ flexShrink: 0 }} />{l}
-          </a>
-        ))}
-      </div>
-
       <div className="card p-4">
         <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#1e1b4b' }}>
           <Target size={13} style={{ color: '#7c3aed' }} /> Negotiation tips
         </h2>
-        {[
-          'Always negotiate. 85% of employers expect it. First offer is rarely the best offer.',
+        {['Always negotiate. 85% of employers expect it. First offer is rarely the best offer.',
           'Anchor high. If they ask your expectation, say EUR5–10k above your minimum.',
           'Ask about the full package: pension (5–10%), health insurance, bonus (5–15%), training budget, hybrid.',
           'Your LLM evaluation background commands a premium right now due to EU AI Act demand. Use it.',

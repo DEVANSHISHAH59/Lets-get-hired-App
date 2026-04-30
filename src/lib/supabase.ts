@@ -21,6 +21,19 @@ export type Application = {
   created_at: string
 }
 
+export type LiveJob = {
+  id: string
+  title: string
+  company: string
+  location: string
+  salary: string
+  posted: string
+  url: string
+  desc: string
+  source: string
+  fetched_at: string
+}
+
 export type CVData = {
   full_name: string
   contact_line: string
@@ -94,6 +107,45 @@ export const db = {
       await supabase.from('cv_data').upsert({ ...cv, user_id: 'devanshi' })
     } catch {
       // ignore
+    }
+  },
+
+  async getLiveJobs(): Promise<LiveJob[]> {
+    try {
+      const { data, error } = await supabase
+        .from('live_jobs')
+        .select('*')
+        .order('fetched_at', { ascending: false })
+        .limit(30)
+      if (error) return []
+      return (data || []) as LiveJob[]
+    } catch {
+      return []
+    }
+  },
+
+  async saveLiveJobs(jobs: Omit<LiveJob, 'fetched_at'>[]): Promise<void> {
+    try {
+      const now = new Date().toISOString()
+      await supabase.from('live_jobs').delete().neq('id', '')
+      await supabase.from('live_jobs').insert(
+        jobs.map(j => ({ ...j, fetched_at: now }))
+      )
+    } catch {
+      // ignore
+    }
+  },
+
+  async getLiveJobsLastFetch(): Promise<string | null> {
+    try {
+      const { data } = await supabase
+        .from('live_jobs')
+        .select('fetched_at')
+        .order('fetched_at', { ascending: false })
+        .limit(1)
+      return data?.[0]?.fetched_at || null
+    } catch {
+      return null
     }
   },
 }
