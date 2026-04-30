@@ -24,12 +24,12 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
   Offer: <Award size={11} />, Rejected: <XCircle size={11} />, Ghosted: <AlertCircle size={11} />,
 }
 const CAT_COLORS: Record<string, string> = {
-  'Big Tech': '#7c3aed', AI: '#1d4ed8', Fintech: '#0369a1', SaaS: '#b45309',
+  'Big Tech': '#059669', AI: '#1d4ed8', Fintech: '#0369a1', SaaS: '#b45309',
   Security: '#b91c1c', Platforms: '#0f766e', Consulting: '#047857',
   Finance: '#1d4ed8', Startup: '#d97706',
 }
 const CAT_BG: Record<string, string> = {
-  'Big Tech': '#ede9fe', AI: '#dbeafe', Fintech: '#e0f2fe', SaaS: '#fef3c7',
+  'Big Tech': '#ecfdf5', AI: '#dbeafe', Fintech: '#e0f2fe', SaaS: '#fef3c7',
   Security: '#fee2e2', Platforms: '#ccfbf1', Consulting: '#d1fae5',
   Finance: '#dbeafe', Startup: '#fef3c7',
 }
@@ -180,9 +180,9 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   useEffect(() => { const t = setTimeout(onClose, 4000); return () => clearTimeout(t) }, [onClose])
   return (
     <div className="toast animate-slide-up">
-      <Bell size={14} style={{ color: '#7c3aed', flexShrink: 0 }} />
+      <Bell size={14} style={{ color: '#059669', flexShrink: 0 }} />
       <span>{message}</span>
-      <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#a78bfa', marginLeft: 'auto' }}>
+      <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6ee7b7', marginLeft: 'auto' }}>
         <X size={12} />
       </button>
     </div>
@@ -264,16 +264,16 @@ export default function App() {
       {mobileMenu && (
         <div className="mobile-overlay" onClick={() => setMobileMenu(false)}>
           <div className="mobile-drawer" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: '#e8e0ff' }}>
+            <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: '#d1fae5' }}>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm"
-                  style={{ background: 'linear-gradient(135deg,#7c3aed,#ec4899)', color: 'white' }}>LGH</div>
+                  style={{ background: 'linear-gradient(135deg,#059669,#ec4899)', color: 'white' }}>LGH</div>
                 <div>
-                  <div className="font-semibold text-sm" style={{ color: '#1e1b4b' }}>Let's Get Hired</div>
-                  <div className="text-xs font-medium" style={{ color: '#7c3aed' }}>Devanshi · Dublin</div>
+                  <div className="font-semibold text-sm" style={{ color: '#1e3a5f' }}>Let's Get Hired</div>
+                  <div className="text-xs font-medium" style={{ color: '#059669' }}>Devanshi · Dublin</div>
                 </div>
               </div>
-              <button onClick={() => setMobileMenu(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#a78bfa' }}>
+              <button onClick={() => setMobileMenu(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6ee7b7' }}>
                 <X size={20} />
               </button>
             </div>
@@ -282,10 +282,10 @@ export default function App() {
                 <button key={n.id} onClick={() => nav(n.id)}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left"
                   style={{
-                    background: page === n.id ? 'linear-gradient(135deg,#7c3aed,#a855f7)' : 'transparent',
-                    color: page === n.id ? 'white' : '#4c1d95',
+                    background: page === n.id ? 'linear-gradient(135deg,#059669,#10b981)' : 'transparent',
+                    color: page === n.id ? 'white' : '#064e3b',
                     border: 'none', cursor: 'pointer',
-                    boxShadow: page === n.id ? '0 3px 10px rgba(124,58,237,0.25)' : 'none',
+                    boxShadow: page === n.id ? '0 3px 10px rgba(5,150,105,0.25)' : 'none',
                   }}>
                   {n.icon}<span>{n.label}</span>
                   {page === n.id && <ChevronRight size={14} className="ml-auto" />}
@@ -293,9 +293,9 @@ export default function App() {
               ))}
             </nav>
             {/* Quick stats in drawer */}
-            <div className="p-4 border-t grid grid-cols-4 gap-2" style={{ borderColor: '#e8e0ff' }}>
-              {[['Apps', stats.total, '#7c3aed'], ['Applied', stats.applied, '#1d4ed8'], ['Interview', stats.interviews, '#b45309'], ['Offers', stats.offers, '#15803d']].map(([l, v, c]) => (
-                <div key={l as string} className="text-center p-2 rounded-xl" style={{ background: '#f5f3ff' }}>
+            <div className="p-4 border-t grid grid-cols-4 gap-2" style={{ borderColor: '#d1fae5' }}>
+              {[['Apps', stats.total, '#059669'], ['Applied', stats.applied, '#1d4ed8'], ['Interview', stats.interviews, '#b45309'], ['Offers', stats.offers, '#15803d']].map(([l, v, c]) => (
+                <div key={l as string} className="text-center p-2 rounded-xl" style={{ background: '#f0fdf4' }}>
                   <div className="text-lg font-bold" style={{ color: c as string }}>{v as number}</div>
                   <div className="text-xs" style={{ color: '#64748b' }}>{l as string}</div>
                 </div>
@@ -313,20 +313,20 @@ export default function App() {
             {/* Logo */}
             <div className="flex items-center gap-3 mb-5">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
-                style={{ background: 'linear-gradient(135deg,#7c3aed,#ec4899)', color: 'white', boxShadow: '0 4px 12px rgba(124,58,237,0.35)' }}>
+                style={{ background: 'linear-gradient(135deg,#059669,#ec4899)', color: 'white', boxShadow: '0 4px 12px rgba(5,150,105,0.35)' }}>
                 LGH
               </div>
               {sidebarOpen && (
                 <div>
-                  <div className="font-semibold text-sm" style={{ fontFamily: 'Sora,sans-serif', color: '#1e1b4b' }}>Let's Get Hired</div>
-                  <div className="text-xs font-medium flex items-center gap-1" style={{ color: '#7c3aed' }}>
-                    <PulseDot color="#7c3aed" />
+                  <div className="font-semibold text-sm" style={{ fontFamily: 'Sora,sans-serif', color: '#1e3a5f' }}>Let's Get Hired</div>
+                  <div className="text-xs font-medium flex items-center gap-1" style={{ color: '#059669' }}>
+                    <PulseDot color="#059669" />
                     <span>Devanshi · Dublin · Live</span>
                   </div>
                 </div>
               )}
               <button onClick={() => setSidebar(!sidebarOpen)} className="ml-auto p-1 rounded-lg"
-                style={{ color: '#a78bfa', background: '#f5f3ff', border: '1px solid #e8e0ff', cursor: 'pointer' }}>
+                style={{ color: '#6ee7b7', background: '#f0fdf4', border: '1px solid #d1fae5', cursor: 'pointer' }}>
                 <ChevronRight size={12} style={{ transform: sidebarOpen ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
               </button>
             </div>
@@ -334,14 +334,14 @@ export default function App() {
             {sidebarOpen && (
               <>
                 {/* Quote */}
-                <div className="mb-4 p-3 rounded-xl text-xs italic leading-relaxed" style={{ background: '#f5f3ff', borderLeft: '3px solid #a78bfa', color: '#4c1d95' }}>
+                <div className="mb-4 p-3 rounded-xl text-xs italic leading-relaxed" style={{ background: '#f0fdf4', borderLeft: '3px solid #6ee7b7', color: '#064e3b' }}>
                   "{quote.text}"
-                  <div className="mt-1 not-italic font-medium" style={{ color: '#7c3aed' }}>— {quote.author}</div>
+                  <div className="mt-1 not-italic font-medium" style={{ color: '#059669' }}>— {quote.author}</div>
                 </div>
                 {/* Stats */}
                 <div className="grid grid-cols-2 gap-2 mb-5">
-                  {[['Tracked', stats.total, '#7c3aed'], ['Applied', stats.applied, '#1d4ed8'], ['Interviews', stats.interviews, '#b45309'], ['Offers', stats.offers, '#15803d']].map(([l, v, c]) => (
-                    <div key={l as string} className="p-2 rounded-xl text-center" style={{ background: '#faf7ff', border: '1px solid #e8e0ff' }}>
+                  {[['Tracked', stats.total, '#059669'], ['Applied', stats.applied, '#1d4ed8'], ['Interviews', stats.interviews, '#b45309'], ['Offers', stats.offers, '#15803d']].map(([l, v, c]) => (
+                    <div key={l as string} className="p-2 rounded-xl text-center" style={{ background: '#faf7ff', border: '1px solid #d1fae5' }}>
                       <div className="text-lg font-bold" style={{ fontFamily: 'Sora', color: c as string }}>{v as number}</div>
                       <div className="text-xs" style={{ color: '#64748b' }}>{l as string}</div>
                     </div>
@@ -356,10 +356,10 @@ export default function App() {
                 <button key={n.id} onClick={() => nav(n.id)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all"
                   style={{
-                    background: page === n.id ? 'linear-gradient(135deg,#7c3aed,#a855f7)' : 'transparent',
-                    color: page === n.id ? 'white' : '#4c1d95',
+                    background: page === n.id ? 'linear-gradient(135deg,#059669,#10b981)' : 'transparent',
+                    color: page === n.id ? 'white' : '#064e3b',
                     border: 'none', cursor: 'pointer', fontFamily: 'DM Sans', textAlign: 'left',
-                    boxShadow: page === n.id ? '0 3px 10px rgba(124,58,237,0.28)' : 'none',
+                    boxShadow: page === n.id ? '0 3px 10px rgba(5,150,105,0.28)' : 'none',
                   }}>
                   <span className="flex-shrink-0">{n.icon}</span>
                   {sidebarOpen && <span className="font-medium">{n.label}</span>}
@@ -370,7 +370,7 @@ export default function App() {
 
             {sidebarOpen && (
               <div className="mt-6">
-                <div className="text-xs font-bold mb-2 px-1 flex items-center gap-1 uppercase tracking-wider" style={{ color: '#7c3aed' }}>
+                <div className="text-xs font-bold mb-2 px-1 flex items-center gap-1 uppercase tracking-wider" style={{ color: '#059669' }}>
                   <Zap size={10} /> Quick links
                 </div>
                 {[
@@ -383,7 +383,7 @@ export default function App() {
                   <a key={l} href={u} target="_blank" rel="noreferrer"
                     className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors hover:bg-purple-50"
                     style={{ color: '#64748b', textDecoration: 'none' }}>
-                    <ExternalLink size={10} style={{ color: '#a78bfa', flexShrink: 0 }} />{l}
+                    <ExternalLink size={10} style={{ color: '#6ee7b7', flexShrink: 0 }} />{l}
                   </a>
                 ))}
               </div>
@@ -395,16 +395,16 @@ export default function App() {
         <div className="main-wrapper">
           {/* Mobile top bar */}
           <header className="mobile-topbar">
-            <button onClick={() => setMobileMenu(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', padding: 8 }}>
+            <button onClick={() => setMobileMenu(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#059669', padding: 8 }}>
               <Menu size={22} />
             </button>
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold"
-                style={{ background: 'linear-gradient(135deg,#7c3aed,#ec4899)', color: 'white' }}>LGH</div>
-              <span className="font-semibold text-sm" style={{ color: '#1e1b4b' }}>Let's Get Hired</span>
+                style={{ background: 'linear-gradient(135deg,#059669,#ec4899)', color: 'white' }}>LGH</div>
+              <span className="font-semibold text-sm" style={{ color: '#1e3a5f' }}>Let's Get Hired</span>
             </div>
-            <div className="flex items-center gap-1.5 text-xs font-medium" style={{ color: '#7c3aed' }}>
-              <PulseDot color="#7c3aed" />
+            <div className="flex items-center gap-1.5 text-xs font-medium" style={{ color: '#059669' }}>
+              <PulseDot color="#059669" />
               <span>Live</span>
             </div>
           </header>
@@ -413,12 +413,12 @@ export default function App() {
             {loading ? (
               <div className="flex flex-col items-center justify-center h-64 gap-4">
                 <div className="w-14 h-14 rounded-full flex items-center justify-center"
-                  style={{ background: 'linear-gradient(135deg,#7c3aed,#ec4899)' }}>
+                  style={{ background: 'linear-gradient(135deg,#059669,#ec4899)' }}>
                   <RefreshCw size={24} className="animate-spin" style={{ color: 'white' }} />
                 </div>
                 <div className="text-center">
-                  <p className="font-semibold" style={{ color: '#7c3aed' }}>Loading your job hunt HQ...</p>
-                  <p className="text-xs mt-1" style={{ color: '#a78bfa' }}>Connecting to Supabase & live feeds</p>
+                  <p className="font-semibold" style={{ color: '#059669' }}>Loading your job hunt HQ...</p>
+                  <p className="text-xs mt-1" style={{ color: '#6ee7b7' }}>Connecting to Supabase & live feeds</p>
                 </div>
               </div>
             ) : (
@@ -446,7 +446,7 @@ export default function App() {
         {BOTTOM_NAV.map(n => (
           <button key={n.id} onClick={() => nav(n.id)}
             className="bottom-nav-item"
-            style={{ color: page === n.id ? '#7c3aed' : '#9ca3af' }}>
+            style={{ color: page === n.id ? '#059669' : '#9ca3af' }}>
             <div className="relative">
               {n.icon}
             </div>
@@ -479,7 +479,7 @@ function Dashboard({ stats, apps, tip, setPage, liveJobs, liveLastUpdated, liveL
     <div className="animate-fade-in">
       {/* Hero */}
       <div className="rounded-2xl p-6 mb-5 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg,#7c3aed 0%,#a855f7 45%,#ec4899 100%)' }}>
+        style={{ background: 'linear-gradient(135deg,#059669 0%,#10b981 45%,#ec4899 100%)' }}>
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-1">
             <Sparkles size={14} style={{ color: '#fde68a' }} />
@@ -503,11 +503,11 @@ function Dashboard({ stats, apps, tip, setPage, liveJobs, liveLastUpdated, liveL
       {/* Stats grid — 2 cols mobile, 5 desktop */}
       <div className="stats-grid mb-5">
         {[
-          { l: 'Tracked',    v: stats.total,      color: '#7c3aed', bg: '#ede9fe' },
+          { l: 'Tracked',    v: stats.total,      color: '#059669', bg: '#ecfdf5' },
           { l: 'Applied',    v: stats.applied,    color: '#1d4ed8', bg: '#dbeafe' },
           { l: 'Interviews', v: stats.interviews, color: '#b45309', bg: '#fef3c7' },
           { l: 'Offers',     v: stats.offers,     color: '#15803d', bg: '#dcfce7' },
-          { l: 'Response %', v: `${stats.rate}%`, color: '#7c3aed', bg: '#f5f3ff' },
+          { l: 'Response %', v: `${stats.rate}%`, color: '#059669', bg: '#f0fdf4' },
         ].map(s => (
           <div key={s.l} className="stat-card">
             <div className="text-2xl font-bold mb-1" style={{ fontFamily: 'Sora', color: s.color }}>{s.v}</div>
@@ -520,14 +520,14 @@ function Dashboard({ stats, apps, tip, setPage, liveJobs, liveLastUpdated, liveL
         {/* Hot jobs */}
         <div>
           <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-            <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: '#1e1b4b' }}>
+            <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: '#1e3a5f' }}>
               {isLive ? <><PulseDot /><span className="badge-live">LIVE</span></> : <span className="badge-hot">HOT</span>}
               Jobs right now
             </h2>
             <div className="flex items-center gap-2">
-              {liveLoading && <RefreshCw size={11} className="animate-spin" style={{ color: '#a78bfa' }} />}
+              {liveLoading && <RefreshCw size={11} className="animate-spin" style={{ color: '#6ee7b7' }} />}
               {liveLastUpdated && !liveLoading && (
-                <span className="text-xs" style={{ color: '#a78bfa' }}>
+                <span className="text-xs" style={{ color: '#6ee7b7' }}>
                   next in {fmt(countdown)}
                 </span>
               )}
@@ -543,9 +543,9 @@ function Dashboard({ stats, apps, tip, setPage, liveJobs, liveLastUpdated, liveL
               <div key={j.id || i} className="card p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold truncate" style={{ color: '#1e1b4b' }}>{j.title}</div>
+                    <div className="text-sm font-semibold truncate" style={{ color: '#1e3a5f' }}>{j.title}</div>
                     <div className="text-xs mt-1 flex items-center gap-2 flex-wrap">
-                      <span style={{ color: '#7c3aed', fontWeight: 500 }}>{j.company}</span>
+                      <span style={{ color: '#059669', fontWeight: 500 }}>{j.company}</span>
                       <span className="badge-sal">{j.salary}</span>
                     </div>
                     <div className="text-xs mt-1" style={{ color: '#64748b' }}>{j.posted || j.source}</div>
@@ -565,8 +565,8 @@ function Dashboard({ stats, apps, tip, setPage, liveJobs, liveLastUpdated, liveL
 
         {/* Quick search + recent */}
         <div>
-          <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#1e1b4b' }}>
-            <Radio size={13} style={{ color: '#7c3aed' }} /> Search now
+          <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#1e3a5f' }}>
+            <Radio size={13} style={{ color: '#059669' }} /> Search now
           </h2>
           <div className="space-y-1 mb-5">
             {[
@@ -580,23 +580,23 @@ function Dashboard({ stats, apps, tip, setPage, liveJobs, liveLastUpdated, liveL
             ].map(([l, u]) => (
               <a key={l} href={u} target="_blank" rel="noreferrer"
                 className="flex items-center gap-2 text-xs py-1.5 px-2 rounded-lg transition-colors hover:bg-purple-50"
-                style={{ color: '#1e1b4b', textDecoration: 'none' }}>
-                <ExternalLink size={10} style={{ color: '#a78bfa', flexShrink: 0 }} />{l}
+                style={{ color: '#1e3a5f', textDecoration: 'none' }}>
+                <ExternalLink size={10} style={{ color: '#6ee7b7', flexShrink: 0 }} />{l}
               </a>
             ))}
           </div>
 
           {recent.length > 0 && (
             <>
-              <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#1e1b4b' }}>
-                <Clock size={13} style={{ color: '#7c3aed' }} /> Recent applications
+              <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#1e3a5f' }}>
+                <Clock size={13} style={{ color: '#059669' }} /> Recent applications
               </h2>
               <div className="space-y-2">
                 {recent.map(a => (
                   <div key={a.id} className="card p-3 flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <div className="text-xs font-semibold truncate" style={{ color: '#1e1b4b' }}>{a.title}</div>
-                      <div className="text-xs mt-0.5 font-medium" style={{ color: '#7c3aed' }}>{a.company} · {a.date_applied}</div>
+                      <div className="text-xs font-semibold truncate" style={{ color: '#1e3a5f' }}>{a.title}</div>
+                      <div className="text-xs mt-0.5 font-medium" style={{ color: '#059669' }}>{a.company} · {a.date_applied}</div>
                     </div>
                     {statusChip(a.status)}
                   </div>
@@ -680,8 +680,8 @@ function LiveJobs({ apps, onTrack, liveJobs, liveLoading, liveLastUpdated, liveN
             {liveLoading ? 'Fetching...' : newCount > 0 ? `${newCount} new! Refresh` : 'Refresh'}
           </button>
           {lastUpdated && (
-            <div className="flex items-center gap-1.5 text-xs" style={{ color: '#a78bfa' }}>
-              <PulseDot color="#7c3aed" />
+            <div className="flex items-center gap-1.5 text-xs" style={{ color: '#6ee7b7' }}>
+              <PulseDot color="#059669" />
               <span>Next update in {fmt(countdown)}</span>
             </div>
           )}
@@ -690,10 +690,10 @@ function LiveJobs({ apps, onTrack, liveJobs, liveLoading, liveLastUpdated, liveN
 
       {/* New jobs notification */}
       {newCount > 0 && (
-        <div className="rounded-xl p-3 mb-4 flex items-center justify-between gap-3" style={{ background: '#ede9fe', border: '1px solid #a78bfa' }}>
+        <div className="rounded-xl p-3 mb-4 flex items-center justify-between gap-3" style={{ background: '#ecfdf5', border: '1px solid #6ee7b7' }}>
           <div className="flex items-center gap-2">
-            <Bell size={14} style={{ color: '#7c3aed' }} />
-            <span className="text-sm font-semibold" style={{ color: '#5b21b6' }}>{newCount} new jobs found since last check!</span>
+            <Bell size={14} style={{ color: '#059669' }} />
+            <span className="text-sm font-semibold" style={{ color: '#065f46' }}>{newCount} new jobs found since last check!</span>
           </div>
           <button onClick={() => { clearNew(); refresh() }} className="btn-primary text-xs py-1 px-3">View</button>
         </div>
@@ -718,8 +718,8 @@ function LiveJobs({ apps, onTrack, liveJobs, liveLoading, liveLastUpdated, liveN
               <div key={j.id} className="card p-3">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold" style={{ color: '#1e1b4b' }}>{j.title}</div>
-                    <div className="text-xs mt-1" style={{ color: '#7c3aed' }}>
+                    <div className="text-sm font-semibold" style={{ color: '#1e3a5f' }}>{j.title}</div>
+                    <div className="text-xs mt-1" style={{ color: '#059669' }}>
                       {j.company} · {j.location} · via {j.source}
                       <span className="badge-sal ml-2">{j.salary}</span>
                     </div>
@@ -741,20 +741,36 @@ function LiveJobs({ apps, onTrack, liveJobs, liveLoading, liveLastUpdated, liveN
         </div>
       )}
 
-      {/* Filters */}
+      {/* ── Prominent role type filter pills ─────────────── */}
+      <div className="mb-4">
+        <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#064e3b' }}>Filter by role type</p>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { label: 'All Roles',        value: 'All',             cls: 'role-pill-all',  icon: '🌟' },
+            { label: 'Trust & Safety',   value: 'Trust & Safety',  cls: 'role-pill-ts',   icon: '🛡️' },
+            { label: 'AI Analyst',       value: 'AI Analyst',      cls: 'role-pill-ai',   icon: '🤖' },
+            { label: 'Data Analyst',     value: 'Data Analyst',    cls: 'role-pill-da',   icon: '📊' },
+            { label: 'Product Owner',    value: 'Product Owner',   cls: 'role-pill-po',   icon: '🎯' },
+            { label: 'Business Analyst', value: 'Business Analyst',cls: 'role-pill-ba',   icon: '💼' },
+          ].map(r => (
+            <button key={r.value} onClick={() => setRoleF(r.value)}
+              className={`role-pill ${roleF === r.value ? r.cls : 'role-pill-inactive'}`}>
+              <span>{r.icon}</span>{r.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Search + sort row */}
       <div className="filter-row mb-4">
-        <input className="input flex-1 min-w-0" placeholder="Search jobs or companies..." value={search} onChange={e => setSearch(e.target.value)} />
-        <select className="input" style={{ width: 160 }} value={roleF} onChange={e => setRoleF(e.target.value)}>
-          <option>All</option>
-          {ROLES.map(r => <option key={r}>{r}</option>)}
-        </select>
-        <select className="input" style={{ width: 140 }} value={sortF} onChange={e => setSortF(e.target.value)}>
+        <input className="input flex-1 min-w-0" placeholder="Search any job title, company, or keyword..." value={search} onChange={e => setSearch(e.target.value)} />
+        <select className="input" style={{ width: 150 }} value={sortF} onChange={e => setSortF(e.target.value)}>
           <option value="newest">Newest first</option>
           <option value="salary">Salary (high)</option>
         </select>
       </div>
 
-      <p className="text-xs mb-3 font-medium" style={{ color: '#a78bfa' }}>{jobs.length} curated roles</p>
+      <p className="text-xs mb-3 font-medium" style={{ color: '#059669' }}>{jobs.length} roles matching · {roleF}</p>
 
       <div className="space-y-3">
         {jobs.map((j, i) => {
@@ -764,11 +780,11 @@ function LiveJobs({ apps, onTrack, liveJobs, liveLoading, liveLastUpdated, liveN
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="text-sm font-bold" style={{ color: '#1e1b4b' }}>{j.title}</span>
+                    <span className="text-sm font-bold" style={{ color: '#1e3a5f' }}>{j.title}</span>
                     {ageBadge(j.age)}
                   </div>
                   <div className="text-xs mb-2 flex items-center gap-2 flex-wrap">
-                    <span style={{ color: '#7c3aed', fontWeight: 500 }}>{j.company}</span>
+                    <span style={{ color: '#059669', fontWeight: 500 }}>{j.company}</span>
                     <span style={{ color: '#64748b' }}>· Dublin · via {j.source}</span>
                     <span className="badge-sal">{j.salary}</span>
                   </div>
@@ -830,11 +846,11 @@ function SiliconRepublic() {
           <button key={t} onClick={() => setTab(t)}
             className="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
             style={{
-              background: tab === t ? 'linear-gradient(135deg,#7c3aed,#a855f7)' : '#ffffff',
-              color: tab === t ? 'white' : '#7c3aed',
-              border: `1px solid ${tab === t ? 'transparent' : '#ddd6fe'}`,
+              background: tab === t ? 'linear-gradient(135deg,#059669,#10b981)' : '#ffffff',
+              color: tab === t ? 'white' : '#059669',
+              border: `1px solid ${tab === t ? 'transparent' : '#a7f3d0'}`,
               cursor: 'pointer',
-              boxShadow: tab === t ? '0 3px 10px rgba(124,58,237,0.25)' : 'none',
+              boxShadow: tab === t ? '0 3px 10px rgba(5,150,105,0.25)' : 'none',
             }}>
             {t === 'links' ? 'Direct Links' : t === 'jobs' ? 'Dublin Jobs' : 'Tech News'}
           </button>
@@ -842,14 +858,14 @@ function SiliconRepublic() {
       </div>
       {tab === 'jobs' && <div className="space-y-2">{srJobs.map((item, i) => (
         <div key={i} className="card p-4">
-          <a href={item.url} target="_blank" rel="noreferrer" className="text-sm font-semibold hover:underline" style={{ color: '#1e1b4b', textDecoration: 'none' }}>{item.title}</a>
+          <a href={item.url} target="_blank" rel="noreferrer" className="text-sm font-semibold hover:underline" style={{ color: '#1e3a5f', textDecoration: 'none' }}>{item.title}</a>
           <div className="text-xs mt-1 flex items-center gap-2"><span className="chip chip-ts">{item.co}</span><span style={{ color: '#64748b' }}>{item.dt}</span></div>
         </div>
       ))}</div>}
       {tab === 'news' && <div className="space-y-2">{srNews.map((item, i) => (
         <div key={i} className="card p-4">
-          <a href={item.url} target="_blank" rel="noreferrer" className="text-sm font-semibold hover:underline" style={{ color: '#1e1b4b', textDecoration: 'none' }}>{item.title}</a>
-          <div className="text-xs mt-1 font-medium" style={{ color: '#7c3aed' }}>Silicon Republic · {item.dt}</div>
+          <a href={item.url} target="_blank" rel="noreferrer" className="text-sm font-semibold hover:underline" style={{ color: '#1e3a5f', textDecoration: 'none' }}>{item.title}</a>
+          <div className="text-xs mt-1 font-medium" style={{ color: '#059669' }}>Silicon Republic · {item.dt}</div>
         </div>
       ))}</div>}
       {tab === 'links' && <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -857,7 +873,7 @@ function SiliconRepublic() {
           ['Dublin tech companies', 'https://www.siliconrepublic.com/companies'], ['Data & Analytics', 'https://www.siliconrepublic.com/data-science'],
           ['Cybersecurity', 'https://www.siliconrepublic.com/security'], ['Newsletter signup', 'https://www.siliconrepublic.com/newsletter'],
         ].map(([l, u]) => (
-          <a key={l} href={u} target="_blank" rel="noreferrer" className="card p-3 flex items-center gap-2 text-sm font-medium" style={{ color: '#7c3aed', textDecoration: 'none' }}>
+          <a key={l} href={u} target="_blank" rel="noreferrer" className="card p-3 flex items-center gap-2 text-sm font-medium" style={{ color: '#059669', textDecoration: 'none' }}>
             <ExternalLink size={13} style={{ flexShrink: 0 }} />{l}
           </a>
         ))}
@@ -896,8 +912,8 @@ function SVNews() {
             {loading ? 'Fetching...' : newCount > 0 ? `${newCount} new stories!` : 'Refresh'}
           </button>
           {lastUpdated && (
-            <div className="flex items-center gap-1.5 text-xs" style={{ color: '#a78bfa' }}>
-              <PulseDot color="#7c3aed" />
+            <div className="flex items-center gap-1.5 text-xs" style={{ color: '#6ee7b7' }}>
+              <PulseDot color="#059669" />
               <span>Updates in {fmt(countdown)}</span>
             </div>
           )}
@@ -915,9 +931,9 @@ function SVNews() {
 
       {/* New stories notification */}
       {newCount > 0 && (
-        <div className="rounded-xl p-3 mb-4 flex items-center gap-3" style={{ background: '#ede9fe', border: '1px solid #a78bfa' }}>
-          <Bell size={14} style={{ color: '#7c3aed' }} />
-          <span className="text-sm font-semibold" style={{ color: '#5b21b6' }}>{newCount} new stories since last visit!</span>
+        <div className="rounded-xl p-3 mb-4 flex items-center gap-3" style={{ background: '#ecfdf5', border: '1px solid #6ee7b7' }}>
+          <Bell size={14} style={{ color: '#059669' }} />
+          <span className="text-sm font-semibold" style={{ color: '#065f46' }}>{newCount} new stories since last visit!</span>
           <button onClick={clearNew} className="btn-primary text-xs py-1 px-2 ml-auto">Dismiss</button>
         </div>
       )}
@@ -936,9 +952,9 @@ function SVNews() {
           <button key={t} onClick={() => setTagF(t)}
             className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
             style={{
-              background: tagF === t ? '#7c3aed' : '#ffffff',
-              color: tagF === t ? 'white' : '#7c3aed',
-              border: `1px solid ${tagF === t ? 'transparent' : '#ddd6fe'}`,
+              background: tagF === t ? '#059669' : '#ffffff',
+              color: tagF === t ? 'white' : '#059669',
+              border: `1px solid ${tagF === t ? 'transparent' : '#a7f3d0'}`,
               cursor: 'pointer',
             }}>
             {t}
@@ -953,13 +969,13 @@ function SVNews() {
               <div className="flex-1 min-w-0">
                 <a href={item.url} target="_blank" rel="noreferrer"
                   className="text-sm font-semibold hover:underline leading-snug block mb-1"
-                  style={{ color: '#1e1b4b', textDecoration: 'none' }}>{item.title}</a>
+                  style={{ color: '#1e3a5f', textDecoration: 'none' }}>{item.title}</a>
                 <div className="text-xs flex items-center gap-2 flex-wrap" style={{ color: '#64748b' }}>
-                  <span style={{ color: '#7c3aed', fontWeight: 500 }}>{item.source}</span>
+                  <span style={{ color: '#059669', fontWeight: 500 }}>{item.source}</span>
                   <span>·</span>
                   <span>{item.date || (item.pubDate ? new Date(item.pubDate).toLocaleDateString('en-IE') : '')}</span>
                 </div>
-                {item.relevance && <div className="text-xs mt-1.5 italic" style={{ color: '#5b21b6' }}>Why it matters: {item.relevance}</div>}
+                {item.relevance && <div className="text-xs mt-1.5 italic" style={{ color: '#065f46' }}>Why it matters: {item.relevance}</div>}
                 {item.desc && !item.relevance && <p className="text-xs mt-1.5" style={{ color: '#64748b' }}>{item.desc}</p>}
               </div>
               <span className={`${TAG_CLASS[item.tag] || 'tag-ai'} flex-shrink-0`}>{item.tag}</span>
@@ -969,13 +985,13 @@ function SVNews() {
       </div>
 
       <div className="mt-6">
-        <h2 className="text-sm font-bold mb-3" style={{ color: '#1e1b4b' }}>Follow these sources daily</h2>
+        <h2 className="text-sm font-bold mb-3" style={{ color: '#1e3a5f' }}>Follow these sources daily</h2>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {[['TechCrunch AI', 'https://techcrunch.com/category/artificial-intelligence/'], ['VentureBeat AI', 'https://venturebeat.com/category/ai'],
             ['Silicon Republic', 'https://www.siliconrepublic.com/machines'], ['Wired AI', 'https://www.wired.com/tag/artificial-intelligence/'],
             ['MIT Tech Review', 'https://www.technologyreview.com/topic/artificial-intelligence/'], ['EU AI Act tracker', 'https://artificialintelligenceact.eu/'],
           ].map(([l, u]) => (
-            <a key={l} href={u} target="_blank" rel="noreferrer" className="card p-3 flex items-center gap-2 text-sm font-medium" style={{ color: '#7c3aed', textDecoration: 'none' }}>
+            <a key={l} href={u} target="_blank" rel="noreferrer" className="card p-3 flex items-center gap-2 text-sm font-medium" style={{ color: '#059669', textDecoration: 'none' }}>
               <ExternalLink size={12} style={{ flexShrink: 0 }} />{l}
             </a>
           ))}
@@ -1007,23 +1023,23 @@ function Companies() {
           {cats.map(c => <option key={c}>{c}</option>)}
         </select>
       </div>
-      <p className="text-xs mb-4 font-medium" style={{ color: '#a78bfa' }}>{cos.length} companies shown</p>
+      <p className="text-xs mb-4 font-medium" style={{ color: '#6ee7b7' }}>{cos.length} companies shown</p>
       {Object.entries(groups).map(([cat, items]) => (
         <div key={cat} className="mb-6">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-2 h-2 rounded-full" style={{ background: CAT_COLORS[cat] || '#7c3aed' }} />
-            <h2 className="text-xs font-bold uppercase tracking-wider" style={{ color: CAT_COLORS[cat] || '#7c3aed' }}>{cat} ({items.length})</h2>
+            <div className="w-2 h-2 rounded-full" style={{ background: CAT_COLORS[cat] || '#059669' }} />
+            <h2 className="text-xs font-bold uppercase tracking-wider" style={{ color: CAT_COLORS[cat] || '#059669' }}>{cat} ({items.length})</h2>
           </div>
           <div className="companies-grid">
             {items.map((co, i) => (
               <div key={i} className="card p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0"
-                    style={{ background: CAT_BG[co.cat] || '#f5f3ff', color: CAT_COLORS[co.cat] || '#7c3aed' }}>{co.abbr}</div>
-                  <div className="font-semibold text-sm truncate" style={{ color: '#1e1b4b' }}>{co.name}</div>
+                    style={{ background: CAT_BG[co.cat] || '#f0fdf4', color: CAT_COLORS[co.cat] || '#059669' }}>{co.abbr}</div>
+                  <div className="font-semibold text-sm truncate" style={{ color: '#1e3a5f' }}>{co.name}</div>
                 </div>
                 <p className="text-xs mb-2 leading-relaxed" style={{ color: '#64748b' }}>{co.desc}</p>
-                <a href={co.url} target="_blank" rel="noreferrer" className="text-xs flex items-center gap-1 font-medium hover:underline" style={{ color: '#7c3aed', textDecoration: 'none' }}>
+                <a href={co.url} target="_blank" rel="noreferrer" className="text-xs flex items-center gap-1 font-medium hover:underline" style={{ color: '#059669', textDecoration: 'none' }}>
                   <ExternalLink size={10} />View jobs
                 </a>
               </div>
@@ -1055,28 +1071,28 @@ function Portals() {
           {cats.map(c => (
             <button key={c} onClick={() => setCatF(c)}
               className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-              style={{ background: catF === c ? '#7c3aed' : '#ffffff', color: catF === c ? 'white' : '#7c3aed', border: `1px solid ${catF === c ? 'transparent' : '#ddd6fe'}`, cursor: 'pointer' }}>
+              style={{ background: catF === c ? '#059669' : '#ffffff', color: catF === c ? 'white' : '#059669', border: `1px solid ${catF === c ? 'transparent' : '#a7f3d0'}`, cursor: 'pointer' }}>
               {c}
             </button>
           ))}
         </div>
-        <label className="flex items-center gap-2 text-xs cursor-pointer ml-auto font-semibold" style={{ color: '#7c3aed' }}>
-          <input type="checkbox" checked={priOnly} onChange={e => setPriOnly(e.target.checked)} style={{ accentColor: '#7c3aed' }} />
+        <label className="flex items-center gap-2 text-xs cursor-pointer ml-auto font-semibold" style={{ color: '#059669' }}>
+          <input type="checkbox" checked={priOnly} onChange={e => setPriOnly(e.target.checked)} style={{ accentColor: '#059669' }} />
           Priority only
         </label>
       </div>
       {Object.entries(groups).map(([cat, items]) => (
         <div key={cat} className="mb-6">
-          <h2 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#7c3aed' }}>{cat} portals ({items.length})</h2>
+          <h2 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#059669' }}>{cat} portals ({items.length})</h2>
           <div className="companies-grid">
             {items.map((p, i) => (
               <div key={i} className="card p-3">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-semibold" style={{ color: '#1e1b4b' }}>{p.name}</span>
+                  <span className="text-sm font-semibold" style={{ color: '#1e3a5f' }}>{p.name}</span>
                   {p.priority && <span className="badge-pri">TOP</span>}
                 </div>
                 <p className="text-xs mb-2" style={{ color: '#64748b' }}>{p.desc}</p>
-                <a href={p.url} target="_blank" rel="noreferrer" className="text-xs flex items-center gap-1 font-medium hover:underline" style={{ color: '#7c3aed', textDecoration: 'none' }}>
+                <a href={p.url} target="_blank" rel="noreferrer" className="text-xs flex items-center gap-1 font-medium hover:underline" style={{ color: '#059669', textDecoration: 'none' }}>
                   <ExternalLink size={10} />Search jobs
                 </a>
               </div>
@@ -1099,15 +1115,15 @@ function Agencies() {
   agencies.forEach(a => { if (!groups[a.tier]) groups[a.tier] = []; groups[a.tier].push(a) })
   const tierOrder = ['Priority', 'Good', 'Also']
   const tierLabels: Record<string, string> = { Priority: 'Priority — Register this week', Good: 'Good — Worth registering', Also: 'Also in Dublin' }
-  const TIER_COLORS: Record<string, string> = { Priority: '#7c3aed', Good: '#1d4ed8', Also: '#64748b' }
+  const TIER_COLORS: Record<string, string> = { Priority: '#059669', Good: '#1d4ed8', Also: '#64748b' }
 
   return (
     <div className="animate-fade-in">
       <h1 className="section-header">Recruitment Agencies</h1>
       <p className="text-sm mb-3" style={{ color: '#64748b' }}>{AGENCIES.length} agencies — 80% of Dublin tech roles go through agencies first!</p>
-      <div className="rounded-xl p-4 mb-4" style={{ background: '#f5f3ff', border: '1px solid #c4b5fd' }}>
-        <div className="text-xs font-bold mb-2 uppercase tracking-wider" style={{ color: '#5b21b6' }}>What to say when you contact them</div>
-        <p className="text-sm leading-relaxed" style={{ color: '#4c1d95' }}>
+      <div className="rounded-xl p-4 mb-4" style={{ background: '#f0fdf4', border: '1px solid #6ee7b7' }}>
+        <div className="text-xs font-bold mb-2 uppercase tracking-wider" style={{ color: '#065f46' }}>What to say when you contact them</div>
+        <p className="text-sm leading-relaxed" style={{ color: '#064e3b' }}>
           "Hi, I am a Trust & Safety AI Analyst with 3+ years experience at Meta, including LLM evaluation, abuse detection and content policy. I hold an MSc in Business Analytics from Dublin Business School and am CSPO certified. I am immediately available for permanent roles in Dublin as a T&S Analyst, AI Analyst, Data Analyst, Business Analyst or Product Owner. Salary expectation: EUR55–80k. Can we schedule a call?"
         </p>
       </div>
@@ -1115,7 +1131,7 @@ function Agencies() {
         {tiers.map(t => (
           <button key={t} onClick={() => setTierF(t)}
             className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-            style={{ background: tierF === t ? '#7c3aed' : '#ffffff', color: tierF === t ? 'white' : '#7c3aed', border: `1px solid ${tierF === t ? 'transparent' : '#ddd6fe'}`, cursor: 'pointer' }}>
+            style={{ background: tierF === t ? '#059669' : '#ffffff', color: tierF === t ? 'white' : '#059669', border: `1px solid ${tierF === t ? 'transparent' : '#a7f3d0'}`, cursor: 'pointer' }}>
             {t}
           </button>
         ))}
@@ -1130,11 +1146,11 @@ function Agencies() {
               <div key={i} className="card p-4 flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-semibold" style={{ color: '#1e1b4b' }}>{a.name}</span>
+                    <span className="text-sm font-semibold" style={{ color: '#1e3a5f' }}>{a.name}</span>
                     {a.tier === 'Priority' && <span className="badge-pri">PRIORITY</span>}
                   </div>
                   <p className="text-xs" style={{ color: '#64748b' }}>{a.desc}</p>
-                  <p className="text-xs mt-1 font-semibold" style={{ color: '#7c3aed' }}>Best for: {a.roles}</p>
+                  <p className="text-xs mt-1 font-semibold" style={{ color: '#059669' }}>Best for: {a.roles}</p>
                 </div>
                 <a href={a.url} target="_blank" rel="noreferrer" className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1 flex-shrink-0">
                   <ExternalLink size={10} />View jobs
@@ -1204,7 +1220,7 @@ function Tracker({ apps, onRefresh }: { apps: Application[]; onRefresh: () => vo
 
       {/* Stats */}
       <div className="tracker-stats mb-5">
-        {[['Total', stats.total, '#7c3aed', '#ede9fe'], ['Applied', stats.applied, '#1d4ed8', '#dbeafe'],
+        {[['Total', stats.total, '#059669', '#ecfdf5'], ['Applied', stats.applied, '#1d4ed8', '#dbeafe'],
           ['Interviews', stats.interviews, '#b45309', '#fef3c7'], ['Offers', stats.offers, '#15803d', '#dcfce7'],
           ['Rejected', stats.rejected, '#dc2626', '#fee2e2'],
         ].map(([l, v, c, bg]) => (
@@ -1225,9 +1241,9 @@ function Tracker({ apps, onRefresh }: { apps: Application[]; onRefresh: () => vo
 
       {/* Add form */}
       {showForm && (
-        <div className="card p-5 mb-5" style={{ background: '#faf7ff', border: '1px solid #c4b5fd' }}>
-          <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#1e1b4b' }}>
-            <Plus size={14} style={{ color: '#7c3aed' }} /> Log New Application
+        <div className="card p-5 mb-5" style={{ background: '#faf7ff', border: '1px solid #6ee7b7' }}>
+          <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#1e3a5f' }}>
+            <Plus size={14} style={{ color: '#059669' }} /> Log New Application
           </h2>
           <div className="form-grid mb-3">
             <input className="input" placeholder="Job title *" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
@@ -1263,12 +1279,12 @@ function Tracker({ apps, onRefresh }: { apps: Application[]; onRefresh: () => vo
       </div>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-16 rounded-2xl" style={{ background: '#f5f3ff', border: '1px dashed #c4b5fd' }}>
-          <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: '#ede9fe' }}>
-            <Briefcase size={24} style={{ color: '#a78bfa' }} />
+        <div className="text-center py-16 rounded-2xl" style={{ background: '#f0fdf4', border: '1px dashed #6ee7b7' }}>
+          <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: '#ecfdf5' }}>
+            <Briefcase size={24} style={{ color: '#6ee7b7' }} />
           </div>
-          <p className="font-semibold" style={{ color: '#7c3aed' }}>No applications yet</p>
-          <p className="text-sm mt-1" style={{ color: '#a78bfa' }}>Click "Log application" to start tracking</p>
+          <p className="font-semibold" style={{ color: '#059669' }}>No applications yet</p>
+          <p className="text-sm mt-1" style={{ color: '#6ee7b7' }}>Click "Log application" to start tracking</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -1276,9 +1292,9 @@ function Tracker({ apps, onRefresh }: { apps: Application[]; onRefresh: () => vo
             <div key={a.id} className="card p-4">
               <div className="flex items-start gap-3 flex-wrap">
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-bold truncate" style={{ color: '#1e1b4b' }}>{a.title}</div>
+                  <div className="text-sm font-bold truncate" style={{ color: '#1e3a5f' }}>{a.title}</div>
                   <div className="text-xs mt-0.5 flex items-center gap-2 flex-wrap">
-                    <span style={{ color: '#7c3aed', fontWeight: 600 }}>{a.company}</span>
+                    <span style={{ color: '#059669', fontWeight: 600 }}>{a.company}</span>
                     {a.salary && <span className="badge-sal">{a.salary}</span>}
                   </div>
                   <div className="text-xs mt-0.5 flex items-center gap-2 flex-wrap" style={{ color: '#64748b' }}>
@@ -1291,7 +1307,7 @@ function Tracker({ apps, onRefresh }: { apps: Application[]; onRefresh: () => vo
                   {roleChip(a.role_type)}
                   <select value={a.status} onChange={e => { db.updateApplicationStatus(a.id, e.target.value).then(onRefresh) }}
                     className="text-xs rounded-xl px-2 py-1.5 border cursor-pointer font-semibold"
-                    style={{ background: '#ffffff', borderColor: '#ddd6fe', color: '#7c3aed', fontFamily: 'DM Sans' }}>
+                    style={{ background: '#ffffff', borderColor: '#a7f3d0', color: '#059669', fontFamily: 'DM Sans' }}>
                     {STATUSES.map(s => <option key={s}>{s}</option>)}
                   </select>
                   {a.job_url && (
@@ -1315,8 +1331,107 @@ function Tracker({ apps, onRefresh }: { apps: Application[]; onRefresh: () => vo
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CV EDITOR
+// CV EDITOR — 3 layouts + PDF + DOCX download
 // ═══════════════════════════════════════════════════════════════════════════════
+const CV_LAYOUTS = [
+  { id: 'classic', label: 'Classic',  desc: 'Serif, traditional' },
+  { id: 'modern',  label: 'Modern',   desc: 'Clean, colour accent' },
+  { id: 'minimal', label: 'Minimal',  desc: 'Bold name, sparse' },
+]
+
+function CVPreview({ form, layout }: { form: CVData; layout: string }) {
+  function bl(t: string) {
+    return t.split('\n').filter(Boolean).map((b, i) => (
+      <div key={i} style={{ margin: '2px 0', paddingLeft: '10px', borderLeft: '2px solid #d1fae5' }}>{b.replace(/^[-•]\s*/, '')}</div>
+    ))
+  }
+
+  if (layout === 'modern') return (
+    <div style={{ fontFamily: 'DM Sans, sans-serif', color: '#1a1a1a', fontSize: '12px', lineHeight: 1.65 }}>
+      <div style={{ borderTop: '4px solid #059669', paddingTop: '14px', marginBottom: '12px' }}>
+        <div style={{ fontSize: '22px', fontWeight: '700', color: '#1e3a5f', letterSpacing: '-0.3px' }}>{form.full_name}</div>
+        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '3px' }}>{form.contact_line}</div>
+      </div>
+      {[{ h: 'Profile', t: form.summary }, { h: 'Core Skills', t: form.skills }].map(s => (
+        <div key={s.h} style={{ marginBottom: '12px' }}>
+          <div style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' as const, letterSpacing: '1.5px', color: '#059669', marginBottom: '5px' }}>{s.h}</div>
+          <p style={{ fontSize: '11.5px', color: '#334155' }}>{s.t}</p>
+        </div>
+      ))}
+      <div style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' as const, letterSpacing: '1.5px', color: '#059669', marginBottom: '8px' }}>Experience</div>
+      {[{ t: form.exp1_title, c: form.exp1_company, d: form.exp1_dates, b: form.exp1_bullets },
+        { t: form.exp2_title, c: form.exp2_company, d: form.exp2_dates, b: form.exp2_bullets }].map((e, i) => (
+        <div key={i} style={{ marginBottom: '12px', paddingLeft: '10px', borderLeft: '3px solid #d1fae5' }}>
+          <div style={{ fontWeight: '600', fontSize: '12.5px', color: '#1e3a5f' }}>{e.t}</div>
+          <div style={{ fontSize: '11px', color: '#059669', marginBottom: '3px' }}>{e.c} · {e.d}</div>
+          <div style={{ fontSize: '11.5px', color: '#475569' }}>{bl(e.b)}</div>
+        </div>
+      ))}
+      <div style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' as const, letterSpacing: '1.5px', color: '#059669', marginBottom: '5px' }}>Education</div>
+      <p style={{ fontSize: '11.5px', color: '#334155' }}>{form.education.split('\n').map((l, i) => <span key={i}>{l}<br /></span>)}</p>
+    </div>
+  )
+
+  if (layout === 'minimal') return (
+    <div style={{ fontFamily: 'Sora, sans-serif', color: '#1a1a1a', fontSize: '12px', lineHeight: 1.65 }}>
+      <div style={{ marginBottom: '16px' }}>
+        <div style={{ fontSize: '26px', fontWeight: '800', color: '#1e3a5f', letterSpacing: '-0.5px' }}>{form.full_name}</div>
+        <div style={{ width: '40px', height: '3px', background: 'linear-gradient(90deg,#059669,#f59e0b)', borderRadius: '2px', margin: '6px 0' }} />
+        <div style={{ fontSize: '11px', color: '#64748b' }}>{form.contact_line}</div>
+      </div>
+      {[{ h: 'About', t: form.summary }, { h: 'Skills', t: form.skills }].map(s => (
+        <div key={s.h} style={{ marginBottom: '12px' }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: '#1e40af', marginBottom: '4px', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>{s.h}</div>
+          <p style={{ fontSize: '11.5px', color: '#374151' }}>{s.t}</p>
+        </div>
+      ))}
+      <div style={{ fontSize: '11px', fontWeight: '700', color: '#1e40af', marginBottom: '8px', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>Work History</div>
+      {[{ t: form.exp1_title, c: form.exp1_company, d: form.exp1_dates, b: form.exp1_bullets },
+        { t: form.exp2_title, c: form.exp2_company, d: form.exp2_dates, b: form.exp2_bullets }].map((e, i) => (
+        <div key={i} style={{ marginBottom: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' as const }}>
+            <div style={{ fontWeight: '700', fontSize: '12.5px' }}>{e.t}</div>
+            <div style={{ fontSize: '10px', color: '#9ca3af', whiteSpace: 'nowrap' as const }}>{e.d}</div>
+          </div>
+          <div style={{ fontSize: '11px', color: '#db2777', marginBottom: '3px' }}>{e.c}</div>
+          <div style={{ fontSize: '11.5px', color: '#4b5563' }}>{bl(e.b)}</div>
+        </div>
+      ))}
+      <div style={{ fontSize: '11px', fontWeight: '700', color: '#1e40af', marginBottom: '5px', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>Education</div>
+      <p style={{ fontSize: '11.5px', color: '#374151' }}>{form.education.split('\n').map((l, i) => <span key={i}>{l}<br /></span>)}</p>
+    </div>
+  )
+
+  // Classic
+  return (
+    <div style={{ fontFamily: 'Georgia, serif', color: '#1a1a1a', fontSize: '12px', lineHeight: 1.65 }}>
+      <div style={{ textAlign: 'center' as const, borderBottom: '2px solid #1e3a5f', paddingBottom: '10px', marginBottom: '12px' }}>
+        <div style={{ fontSize: '22px', fontWeight: '700', color: '#1e3a5f', letterSpacing: '0.5px' }}>{form.full_name}</div>
+        <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '3px' }}>{form.contact_line}</div>
+      </div>
+      {[{ h: 'Professional Summary', t: form.summary }, { h: 'Key Skills', t: form.skills }].map(s => (
+        <div key={s.h} style={{ marginBottom: '10px' }}>
+          <div style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' as const, letterSpacing: '1.5px', borderBottom: '1px solid #e2e8f0', paddingBottom: '2px', marginBottom: '5px', color: '#1e3a5f' }}>{s.h}</div>
+          <p style={{ fontSize: '11.5px' }}>{s.t}</p>
+        </div>
+      ))}
+      <div style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' as const, letterSpacing: '1.5px', borderBottom: '1px solid #e2e8f0', paddingBottom: '2px', marginBottom: '8px', color: '#1e3a5f' }}>Professional Experience</div>
+      {[{ t: form.exp1_title, c: form.exp1_company, d: form.exp1_dates, b: form.exp1_bullets },
+        { t: form.exp2_title, c: form.exp2_company, d: form.exp2_dates, b: form.exp2_bullets }].map((e, i) => (
+        <div key={i} style={{ marginBottom: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' as const }}>
+            <div style={{ fontWeight: '700', fontSize: '12.5px' }}>{e.t}, {e.c}</div>
+            <div style={{ fontSize: '10.5px', color: '#64748b', fontStyle: 'italic' }}>{e.d}</div>
+          </div>
+          <div style={{ fontSize: '11.5px', marginTop: '3px' }}>{bl(e.b)}</div>
+        </div>
+      ))}
+      <div style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' as const, letterSpacing: '1.5px', borderBottom: '1px solid #e2e8f0', paddingBottom: '2px', marginBottom: '5px', color: '#1e3a5f' }}>Education</div>
+      <p style={{ fontSize: '11.5px' }}>{form.education.split('\n').map((l, i) => <span key={i}>{l}<br /></span>)}</p>
+    </div>
+  )
+}
+
 function CVEditor({ cv, onSave }: { cv: CVData | null; onSave: (cv: CVData) => void }) {
   const [form, setForm] = useState<CVData>(cv || {
     full_name: 'Devanshi', contact_line: 'Dublin, Ireland | devanshi@email.com | LinkedIn',
@@ -1328,9 +1443,12 @@ function CVEditor({ cv, onSave }: { cv: CVData | null; onSave: (cv: CVData) => v
     exp2_bullets: '- HRM software implementation and requirements gathering\n- Stakeholder workshops and process documentation',
     education: 'MSc Business Analytics — Dublin Business School\nCSPO Certification — Scrum Alliance\nIIT Roorkee PM Certification (in progress)',
   })
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved]   = useState(false)
-  const [preview, setPreview] = useState(false)
+  const [saving, setSaving]           = useState(false)
+  const [saved, setSaved]             = useState(false)
+  const [layout, setLayout]           = useState('modern')
+  const [tab, setTab]                 = useState<'edit' | 'preview'>('edit')
+  const [downloading, setDownloading] = useState<string | null>(null)
+  const previewRef                    = useRef<HTMLDivElement>(null)
 
   useEffect(() => { if (cv) setForm(cv) }, [cv])
 
@@ -1340,66 +1458,165 @@ function CVEditor({ cv, onSave }: { cv: CVData | null; onSave: (cv: CVData) => v
     finally { setSaving(false) }
   }
 
+  async function downloadPDF() {
+    setDownloading('pdf')
+    try {
+      const { default: jsPDF }        = await import('jspdf')
+      const { default: html2canvas }  = await import('html2canvas')
+      const el = previewRef.current
+      if (!el) return
+      const canvas  = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+      const imgData = canvas.toDataURL('image/png')
+      const pdf     = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      const pageW   = pdf.internal.pageSize.getWidth()
+      const pageH   = pdf.internal.pageSize.getHeight()
+      const imgW    = pageW - 20
+      const imgH    = (canvas.height * imgW) / canvas.width
+      pdf.addImage(imgData, 'PNG', 10, 10, imgW, Math.min(imgH, pageH - 20))
+      pdf.save(`${form.full_name.replace(/\s+/g, '_')}_CV.pdf`)
+    } catch (e) { console.error(e) }
+    finally { setDownloading(null) }
+  }
+
+  async function downloadDOCX() {
+    setDownloading('docx')
+    try {
+      const { Document, Packer, Paragraph, TextRun, HeadingLevel, BorderStyle, AlignmentType } = await import('docx')
+      const bullets = (txt: string) => txt.split('\n').filter(Boolean).map(b =>
+        new Paragraph({ text: '• ' + b.replace(/^[-•]\s*/, ''), spacing: { after: 60 } })
+      )
+      const secHdr = (text: string) => new Paragraph({
+        children: [new TextRun({ text, bold: true, color: '1e3a5f', size: 24 })],
+        border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: '059669', space: 2 } },
+        spacing: { before: 240, after: 120 },
+      })
+      const doc = new Document({
+        sections: [{
+          properties: { page: { margin: { top: 720, bottom: 720, left: 900, right: 900 } } },
+          children: [
+            new Paragraph({ children: [new TextRun({ text: form.full_name, bold: true, size: 40, color: '1e3a5f' })], alignment: AlignmentType.CENTER }),
+            new Paragraph({ children: [new TextRun({ text: form.contact_line, size: 18, color: '475569' })], alignment: AlignmentType.CENTER, spacing: { after: 240 } }),
+            secHdr('Professional Summary'),
+            new Paragraph({ text: form.summary, spacing: { after: 200 } }),
+            secHdr('Key Skills'),
+            new Paragraph({ text: form.skills, spacing: { after: 200 } }),
+            secHdr('Professional Experience'),
+            new Paragraph({ children: [new TextRun({ text: `${form.exp1_title}  —  ${form.exp1_company}`, bold: true }), new TextRun({ text: `   ${form.exp1_dates}`, color: '059669' })], spacing: { after: 80 } }),
+            ...bullets(form.exp1_bullets),
+            new Paragraph({ spacing: { after: 120 } }),
+            new Paragraph({ children: [new TextRun({ text: `${form.exp2_title}  —  ${form.exp2_company}`, bold: true }), new TextRun({ text: `   ${form.exp2_dates}`, color: '059669' })], spacing: { after: 80 } }),
+            ...bullets(form.exp2_bullets),
+            secHdr('Education'),
+            ...form.education.split('\n').filter(Boolean).map(l => new Paragraph({ text: l, spacing: { after: 80 } })),
+          ],
+        }],
+      })
+      const blob = await Packer.toBlob(doc)
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href = url; a.download = `${form.full_name.replace(/\s+/g, '_')}_CV.docx`
+      a.click(); URL.revokeObjectURL(url)
+    } catch (e) { console.error(e) }
+    finally { setDownloading(null) }
+  }
+
   function f(key: keyof CVData) {
     return { value: form[key], onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm({ ...form, [key]: e.target.value }) }
   }
-  function bl(t: string) { return t.split('\n').filter(Boolean).map((b, i) => <div key={i} style={{ margin: '2px 0' }}>{b}</div>) }
 
   return (
     <div className="animate-fade-in">
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
         <div>
           <h1 className="section-header">CV Editor</h1>
-          <p className="text-sm" style={{ color: '#64748b' }}>Edit left · preview right · saved to Supabase.</p>
+          <p className="text-sm" style={{ color: '#64748b' }}>Edit · choose a layout · download PDF or Word</p>
         </div>
-        <button onClick={() => setPreview(!preview)} className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1.5">
-          {preview ? <><FileText size={12} />Edit</> : <><CheckCircle size={12} />Preview</>}
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button onClick={downloadPDF} disabled={!!downloading}
+            className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
+            style={{ background: 'linear-gradient(135deg,#1e40af,#3b82f6)' }}>
+            {downloading === 'pdf' ? <RefreshCw size={11} className="animate-spin" /> : <FileText size={11} />}
+            Download PDF
+          </button>
+          <button onClick={downloadDOCX} disabled={!!downloading}
+            className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
+            style={{ background: 'linear-gradient(135deg,#db2777,#f472b6)' }}>
+            {downloading === 'docx' ? <RefreshCw size={11} className="animate-spin" /> : <FileText size={11} />}
+            Download Word
+          </button>
+        </div>
       </div>
 
-      <div className={preview ? 'cv-preview-only' : 'cv-grid'}>
-        {!preview && (
+      {/* Layout picker */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#064e3b' }}>Layout:</span>
+        {CV_LAYOUTS.map(l => (
+          <button key={l.id} onClick={() => setLayout(l.id)}
+            className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
+            style={{
+              background: layout === l.id ? 'linear-gradient(135deg,#059669,#10b981)' : '#ffffff',
+              color: layout === l.id ? 'white' : '#059669',
+              border: `1.5px solid ${layout === l.id ? 'transparent' : '#a7f3d0'}`,
+              cursor: 'pointer',
+              boxShadow: layout === l.id ? '0 3px 10px rgba(5,150,105,0.25)' : 'none',
+            }}>
+            {l.label}
+            <span className="ml-1 opacity-70 font-normal">· {l.desc}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Mobile tabs */}
+      <div className="flex gap-2 mb-4 md:hidden">
+        {(['edit', 'preview'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className="flex-1 py-2 rounded-xl text-xs font-semibold capitalize transition-all"
+            style={{ background: tab === t ? 'linear-gradient(135deg,#059669,#10b981)' : '#ffffff', color: tab === t ? 'white' : '#059669', border: `1.5px solid ${tab === t ? 'transparent' : '#a7f3d0'}`, cursor: 'pointer' }}>
+            {t}
+          </button>
+        ))}
+      </div>
+
+      <div className="cv-grid">
+        {/* Edit panel */}
+        <div className={tab === 'preview' ? 'hidden md:block' : 'block'}>
           <div className="space-y-3">
             <input className="input" placeholder="Full name" {...f('full_name')} />
-            <input className="input" placeholder="Contact line" {...f('contact_line')} />
-            <textarea className="input" placeholder="Summary" rows={4} {...f('summary')} />
-            <textarea className="input" placeholder="Skills" rows={3} {...f('skills')} />
-            <div className="text-xs font-bold uppercase tracking-wider px-1" style={{ color: '#7c3aed' }}>Experience 1</div>
-            <input className="input" placeholder="Job title" {...f('exp1_title')} />
-            <input className="input" placeholder="Company" {...f('exp1_company')} />
-            <input className="input" placeholder="Dates" {...f('exp1_dates')} />
-            <textarea className="input" placeholder="Bullets (one per line)" rows={4} {...f('exp1_bullets')} />
-            <div className="text-xs font-bold uppercase tracking-wider px-1" style={{ color: '#7c3aed' }}>Experience 2</div>
-            <input className="input" placeholder="Job title" {...f('exp2_title')} />
-            <input className="input" placeholder="Company" {...f('exp2_company')} />
-            <input className="input" placeholder="Dates" {...f('exp2_dates')} />
-            <textarea className="input" placeholder="Bullets" rows={3} {...f('exp2_bullets')} />
-            <textarea className="input" placeholder="Education" rows={3} {...f('education')} />
+            <input className="input" placeholder="Contact line (email | phone | LinkedIn | location)" {...f('contact_line')} />
+            <textarea className="input" placeholder="Professional summary" rows={4} {...f('summary')} />
+            <textarea className="input" placeholder="Skills (comma or · separated)" rows={3} {...f('skills')} />
+            <div className="rounded-xl p-3 space-y-2" style={{ background: '#ecfdf5', border: '1px solid #a7f3d0' }}>
+              <div className="text-xs font-bold uppercase tracking-wider" style={{ color: '#064e3b' }}>Experience 1</div>
+              <input className="input" placeholder="Job title" {...f('exp1_title')} />
+              <input className="input" placeholder="Company" {...f('exp1_company')} />
+              <input className="input" placeholder="Dates (e.g. 2022 – 2025)" {...f('exp1_dates')} />
+              <textarea className="input" placeholder="Achievements (one per line, start with -)" rows={4} {...f('exp1_bullets')} />
+            </div>
+            <div className="rounded-xl p-3 space-y-2" style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+              <div className="text-xs font-bold uppercase tracking-wider" style={{ color: '#1e40af' }}>Experience 2</div>
+              <input className="input" placeholder="Job title" {...f('exp2_title')} />
+              <input className="input" placeholder="Company" {...f('exp2_company')} />
+              <input className="input" placeholder="Dates" {...f('exp2_dates')} />
+              <textarea className="input" placeholder="Achievements" rows={3} {...f('exp2_bullets')} />
+            </div>
+            <textarea className="input" placeholder="Education (one line per qualification)" rows={3} {...f('education')} />
             <button className="btn-primary w-full flex items-center justify-center gap-2" onClick={save} disabled={saving}>
               {saved ? <><CheckCircle size={14} />Saved!</> : saving ? <><RefreshCw size={13} className="animate-spin" />Saving...</> : 'Save CV to Supabase'}
             </button>
           </div>
-        )}
-        <div className="rounded-2xl p-6" style={{ background: 'white', border: '1.5px solid #ede9fe', minHeight: '400px', color: '#1a1a1a', fontSize: '12px', lineHeight: '1.6', boxShadow: '0 4px 24px rgba(124,58,237,0.08)' }}>
-          <div style={{ fontFamily: 'Sora', fontSize: '20px', fontWeight: '700', color: '#1e1b4b' }}>{form.full_name}</div>
-          <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '12px' }}>{form.contact_line}</div>
-          {[{ h: 'Summary', t: form.summary }, { h: 'Skills', t: form.skills }].map(s => (
-            <div key={s.h}>
-              <div style={{ fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1.2px', color: '#7c3aed', borderBottom: '1.5px solid #ede9fe', margin: '10px 0 5px', paddingBottom: '2px' }}>{s.h}</div>
-              <p style={{ fontSize: '11px' }}>{s.t}</p>
-            </div>
-          ))}
-          <div style={{ fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1.2px', color: '#7c3aed', borderBottom: '1.5px solid #ede9fe', margin: '10px 0 5px', paddingBottom: '2px' }}>Experience</div>
-          {[{ t: form.exp1_title, c: form.exp1_company, d: form.exp1_dates, b: form.exp1_bullets },
-            { t: form.exp2_title, c: form.exp2_company, d: form.exp2_dates, b: form.exp2_bullets }].map((e, i) => (
-            <div key={i} style={{ marginBottom: '10px' }}>
-              <div style={{ fontWeight: '600', fontSize: '12px' }}>{e.t} — {e.c}</div>
-              <div style={{ fontSize: '10px', color: '#a78bfa', marginBottom: '3px' }}>{e.d}</div>
-              <div style={{ fontSize: '11px' }}>{bl(e.b)}</div>
-            </div>
-          ))}
-          <div style={{ fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1.2px', color: '#7c3aed', borderBottom: '1.5px solid #ede9fe', margin: '10px 0 5px', paddingBottom: '2px' }}>Education</div>
-          <p style={{ fontSize: '11px' }}>{form.education.split('\n').map((l, i) => <span key={i}>{l}<br /></span>)}</p>
+        </div>
+
+        {/* Preview panel */}
+        <div className={tab === 'edit' ? 'hidden md:block' : 'block'}>
+          <div ref={previewRef} id="cv-print-target"
+            className="rounded-2xl p-7"
+            style={{ background: 'white', border: '1.5px solid #d1fae5', minHeight: '500px', boxShadow: '0 4px 24px rgba(5,150,105,0.08)' }}>
+            <CVPreview form={form} layout={layout} />
+          </div>
+          <p className="text-xs mt-2 text-center" style={{ color: '#94a3b8' }}>
+            Preview updates as you type · use Download buttons to save
+          </p>
         </div>
       </div>
     </div>
@@ -1449,7 +1666,7 @@ function InterviewPrep() {
         {companies.map((c, i) => (
           <button key={c} onClick={() => { setTab(i); setOpen(null) }}
             className="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
-            style={{ background: tab === i ? 'linear-gradient(135deg,#7c3aed,#a855f7)' : '#ffffff', color: tab === i ? 'white' : '#7c3aed', border: `1px solid ${tab === i ? 'transparent' : '#ddd6fe'}`, cursor: 'pointer', boxShadow: tab === i ? '0 3px 10px rgba(124,58,237,0.25)' : 'none' }}>
+            style={{ background: tab === i ? 'linear-gradient(135deg,#059669,#10b981)' : '#ffffff', color: tab === i ? 'white' : '#059669', border: `1px solid ${tab === i ? 'transparent' : '#a7f3d0'}`, cursor: 'pointer', boxShadow: tab === i ? '0 3px 10px rgba(5,150,105,0.25)' : 'none' }}>
             {c}
           </button>
         ))}
@@ -1460,14 +1677,14 @@ function InterviewPrep() {
             <button className="w-full text-left px-4 py-4 flex items-center justify-between gap-3"
               style={{ background: 'none', border: 'none', cursor: 'pointer' }}
               onClick={() => setOpen(open === i ? null : i)}>
-              <span className="text-sm font-semibold" style={{ color: '#1e1b4b' }}>? {q}</span>
-              <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#f5f3ff' }}>
-                <span style={{ color: '#7c3aed', fontSize: '14px', lineHeight: 1 }}>{open === i ? '−' : '+'}</span>
+              <span className="text-sm font-semibold" style={{ color: '#1e3a5f' }}>? {q}</span>
+              <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#f0fdf4' }}>
+                <span style={{ color: '#059669', fontSize: '14px', lineHeight: 1 }}>{open === i ? '−' : '+'}</span>
               </div>
             </button>
             {open === i && (
-              <div className="px-4 pb-4" style={{ borderTop: '1px solid #ede9fe', background: '#faf7ff' }}>
-                <p className="text-sm leading-relaxed mt-3" style={{ color: '#1e1b4b' }}>{a}</p>
+              <div className="px-4 pb-4" style={{ borderTop: '1px solid #ecfdf5', background: '#faf7ff' }}>
+                <p className="text-sm leading-relaxed mt-3" style={{ color: '#1e3a5f' }}>{a}</p>
                 <textarea className="input mt-3 text-xs" placeholder="Your notes..." rows={2} />
               </div>
             )}
@@ -1479,7 +1696,7 @@ function InterviewPrep() {
         <p className="text-sm" style={{ color: '#166534' }}>Situation → Task → Action → Result. Always end with a measurable outcome.</p>
       </div>
       <div className="card p-4">
-        <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#1e1b4b' }}>
+        <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#1e3a5f' }}>
           <Star size={13} style={{ color: '#f59e0b' }} /> Your unique selling points
         </h2>
         {['Rare combo: LLM evaluation + T&S operations + data analysis — very few have all three',
@@ -1490,8 +1707,8 @@ function InterviewPrep() {
           'Immediately available: top of recruiter shortlists',
         ].map((p, i) => (
           <div key={i} className="flex items-start gap-2 mb-2">
-            <CheckCircle size={13} style={{ color: '#7c3aed', flexShrink: 0, marginTop: '2px' }} />
-            <span className="text-sm" style={{ color: '#1e1b4b' }}>{p}</span>
+            <CheckCircle size={13} style={{ color: '#059669', flexShrink: 0, marginTop: '2px' }} />
+            <span className="text-sm" style={{ color: '#1e3a5f' }}>{p}</span>
           </div>
         ))}
       </div>
@@ -1504,7 +1721,7 @@ function InterviewPrep() {
 // ═══════════════════════════════════════════════════════════════════════════════
 function WeeklyPlan() {
   const weeks = [
-    { title: 'Daily — do these every single day', color: '#7c3aed', bg: '#ede9fe', tasks: [
+    { title: 'Daily — do these every single day', color: '#059669', bg: '#ecfdf5', tasks: [
       { t: 'Check LinkedIn jobs — T&S + AI Analyst + Dublin — filter past 24h', url: 'https://www.linkedin.com/jobs/search/?keywords=trust+safety+analyst&location=Dublin&f_TPR=r86400' },
       { t: 'Check Indeed Ireland — analyst + Dublin — sorted by date', url: 'https://ie.indeed.com/jobs?q=trust+safety+analyst+OR+AI+analyst+OR+business+analyst&l=Dublin&fromage=1&sort=date' },
       { t: 'Read Silicon Republic — 5 minutes of Irish tech news', url: 'https://www.siliconrepublic.com' },
@@ -1564,13 +1781,13 @@ function WeeklyPlan() {
     <div className="animate-fade-in">
       <h1 className="section-header">4-Week Job Search Plan</h1>
       <p className="text-sm mb-4" style={{ color: '#64748b' }}>Follow this plan to maximise your chances of getting hired within a month.</p>
-      <div className="rounded-xl p-4 mb-5" style={{ background: '#f5f3ff', border: '1px solid #c4b5fd' }}>
+      <div className="rounded-xl p-4 mb-5" style={{ background: '#f0fdf4', border: '1px solid #6ee7b7' }}>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-bold" style={{ color: '#4c1d95' }}>Overall progress</span>
-          <span className="text-sm font-bold" style={{ color: '#7c3aed' }}>{doneTasks}/{totalTasks} tasks · {pct}%</span>
+          <span className="text-sm font-bold" style={{ color: '#064e3b' }}>Overall progress</span>
+          <span className="text-sm font-bold" style={{ color: '#059669' }}>{doneTasks}/{totalTasks} tasks · {pct}%</span>
         </div>
-        <div className="w-full h-3 rounded-full" style={{ background: '#e8e0ff' }}>
-          <div className="h-3 rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#7c3aed,#ec4899)' }} />
+        <div className="w-full h-3 rounded-full" style={{ background: '#d1fae5' }}>
+          <div className="h-3 rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#059669,#ec4899)' }} />
         </div>
       </div>
       <div className="rounded-xl p-4 mb-5" style={{ background: '#fffbeb', borderLeft: '4px solid #f59e0b' }}>
@@ -1585,7 +1802,7 @@ function WeeklyPlan() {
             <div key={wi} className="card p-4">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: w.color }} />
-                <h2 className="text-sm font-bold" style={{ color: '#1e1b4b' }}>{w.title}</h2>
+                <h2 className="text-sm font-bold" style={{ color: '#1e3a5f' }}>{w.title}</h2>
                 <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: w.bg, color: w.color }}>{doneCount}/{w.tasks.length}</span>
               </div>
               <div className="w-full h-1.5 rounded-full mb-3" style={{ background: '#f1f5f9' }}>
@@ -1598,7 +1815,7 @@ function WeeklyPlan() {
                     <div key={ti} className="flex items-start gap-3">
                       <input type="checkbox" checked={done} onChange={() => toggle(key)} style={{ accentColor: w.color, marginTop: 3, flexShrink: 0 }} />
                       <div className="flex-1 flex items-center justify-between gap-2 flex-wrap">
-                        <span className="text-sm" style={{ color: done ? '#9ca3af' : '#1e1b4b', textDecoration: done ? 'line-through' : 'none' }}>{task.t}</span>
+                        <span className="text-sm" style={{ color: done ? '#9ca3af' : '#1e3a5f', textDecoration: done ? 'line-through' : 'none' }}>{task.t}</span>
                         {task.url && (
                           <a href={task.url} target="_blank" rel="noreferrer" className="text-xs flex items-center gap-1 font-semibold flex-shrink-0" style={{ color: w.color, textDecoration: 'none' }}>
                             <ExternalLink size={10} />Go
@@ -1648,26 +1865,26 @@ function SalaryGuide() {
     <div className="animate-fade-in">
       <h1 className="section-header">Dublin Salary Guide 2026</h1>
       <p className="text-sm mb-4" style={{ color: '#64748b' }}>Salary ranges for your target roles in Dublin.</p>
-      <div className="rounded-xl p-4 mb-5" style={{ background: 'linear-gradient(135deg,#f5f3ff,#fce7f3)', border: '1px solid #c4b5fd' }}>
-        <div className="text-xs font-bold mb-1 uppercase tracking-wider" style={{ color: '#5b21b6' }}>Devanshi's target range</div>
-        <p className="text-sm" style={{ color: '#4c1d95' }}>Based on your 3+ years T&S experience, MSc and CSPO cert — target <strong style={{ color: '#7c3aed' }}>EUR55,000–EUR80,000</strong>. Do not undersell yourself.</p>
+      <div className="rounded-xl p-4 mb-5" style={{ background: 'linear-gradient(135deg,#f0fdf4,#fce7f3)', border: '1px solid #6ee7b7' }}>
+        <div className="text-xs font-bold mb-1 uppercase tracking-wider" style={{ color: '#065f46' }}>Devanshi's target range</div>
+        <p className="text-sm" style={{ color: '#064e3b' }}>Based on your 3+ years T&S experience, MSc and CSPO cert — target <strong style={{ color: '#059669' }}>EUR55,000–EUR80,000</strong>. Do not undersell yourself.</p>
       </div>
-      <div className="rounded-2xl overflow-hidden mb-5" style={{ border: '1px solid #e8e0ff', boxShadow: '0 2px 12px rgba(124,58,237,0.06)' }}>
+      <div className="rounded-2xl overflow-hidden mb-5" style={{ border: '1px solid #d1fae5', boxShadow: '0 2px 12px rgba(5,150,105,0.06)' }}>
         <div className="salary-table-wrap">
           <table className="w-full text-sm" style={{ minWidth: 500 }}>
             <thead>
-              <tr style={{ background: '#f5f3ff' }}>
+              <tr style={{ background: '#f0fdf4' }}>
                 {['Role', 'Level', 'Salary', 'Example Companies'].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: '#7c3aed' }}>{h}</th>
+                  <th key={h} className="text-left px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: '#059669' }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {rows.map((row, i) => (
-                <tr key={i} style={{ background: i % 2 === 0 ? '#ffffff' : '#faf7ff', borderTop: '1px solid #e8e0ff' }}>
-                  <td className="px-4 py-3 font-semibold" style={{ color: '#1e1b4b' }}>{row[0]}</td>
+                <tr key={i} style={{ background: i % 2 === 0 ? '#ffffff' : '#faf7ff', borderTop: '1px solid #d1fae5' }}>
+                  <td className="px-4 py-3 font-semibold" style={{ color: '#1e3a5f' }}>{row[0]}</td>
                   <td className="px-4 py-3"><span className={`chip ${row[1] === 'Senior' ? 'chip-ts' : 'chip-da'}`}>{row[1]}</span></td>
-                  <td className="px-4 py-3 font-bold" style={{ color: '#7c3aed' }}>{row[2]}</td>
+                  <td className="px-4 py-3 font-bold" style={{ color: '#059669' }}>{row[2]}</td>
                   <td className="px-4 py-3 text-xs" style={{ color: '#64748b' }}>{row[3]}</td>
                 </tr>
               ))}
@@ -1676,8 +1893,8 @@ function SalaryGuide() {
         </div>
       </div>
       <div className="card p-4">
-        <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#1e1b4b' }}>
-          <Target size={13} style={{ color: '#7c3aed' }} /> Negotiation tips
+        <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#1e3a5f' }}>
+          <Target size={13} style={{ color: '#059669' }} /> Negotiation tips
         </h2>
         {['Always negotiate. 85% of employers expect it. First offer is rarely the best offer.',
           'Anchor high. If they ask your expectation, say EUR5–10k above your minimum.',
@@ -1686,8 +1903,8 @@ function SalaryGuide() {
           'Use competing offers or agency interest as leverage — even a conversation with CPL counts.',
         ].map((t, i) => (
           <div key={i} className="flex items-start gap-2 mb-2">
-            <CheckCircle size={13} style={{ color: '#7c3aed', flexShrink: 0, marginTop: '2px' }} />
-            <span className="text-sm" style={{ color: '#1e1b4b' }}>{t}</span>
+            <CheckCircle size={13} style={{ color: '#059669', flexShrink: 0, marginTop: '2px' }} />
+            <span className="text-sm" style={{ color: '#1e3a5f' }}>{t}</span>
           </div>
         ))}
       </div>
