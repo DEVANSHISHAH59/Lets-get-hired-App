@@ -523,7 +523,7 @@ function SiliconRepublic() {
 function SVNews({ news, loading, lastUpdated }: { news: any[], loading: boolean, lastUpdated: string | null }) {
   const [tagF, setTagF] = useState('All')
   const tags = ['All','AI','Policy','Jobs','Funding']
-  const news = SV_NEWS.filter(n => tagF==='All' || n.tag===tagF)
+  const filteredNews = (news && news.length > 0 ? news : SV_NEWS).filter((n: any) => tagF==='All' || n.tag===tagF)
   const tagStyle: Record<string,string> = {
     AI:'background:#1e3a5f;color:#93c5fd',Policy:'background:#0e2a4a;color:#bae6fd',
     Jobs:'background:#064e3b;color:#6ee7b7',Funding:'background:#78350f;color:#fde68a'
@@ -588,7 +588,7 @@ function SVNews({ news, loading, lastUpdated }: { news: any[], loading: boolean,
         </div>
       )}
       <div className="flex gap-2 mb-4 flex-wrap">
-        {tags.map(t=>(
+        {tags.map((t:string)=>(
           <button key={t} onClick={()=>setTagF(t)}
             className="px-3 py-1 rounded-full text-xs transition-all"
             style={{background:tagF===t?'#10b981':'#0d1f35',color:tagF===t?'white':'#6ee7b7',border:'1px solid #1a3a5c',cursor:'pointer',fontFamily:'DM Sans'}}>
@@ -597,7 +597,7 @@ function SVNews({ news, loading, lastUpdated }: { news: any[], loading: boolean,
         ))}
       </div>
       <div className="space-y-3">
-        {news.map((item,i)=>(
+        {filteredNews.map((item:any,i:number)=>(
           <div key={i} className="card p-4">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="flex-1 min-w-0">
