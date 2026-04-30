@@ -10,34 +10,6 @@ import {
 } from 'lucide-react'
 
 // -- Live data hooks (inline) ------------------------------------------------
-function useLiveJobs() {
-  const [jobs, setJobs] = useState<any[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null)
-  useEffect(() => {
-    fetch('/api/jobs')
-      .then(r => r.json())
-      .then(data => { setJobs(data.jobs); setLastUpdated(data.lastUpdated) })
-      .catch(() => setJobs(null))
-      .finally(() => setLoading(false))
-  }, [])
-  return { jobs, loading, lastUpdated }
-}
-
-function useLiveNews() {
-  const [news, setNews] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null)
-  useEffect(() => {
-    fetch('/api/news')
-      .then(r => r.json())
-      .then(data => { setNews(data.news || []); setLastUpdated(data.lastUpdated) })
-      .catch(() => setNews([]))
-      .finally(() => setLoading(false))
-  }, [])
-  return { news, loading, lastUpdated }
-}
-
 // -- helpers ------------------------------------------------------------------
 const ROLE_COLORS: Record<string, string> = {
   'Trust & Safety':'chip-ts','AI Analyst':'chip-ai',
@@ -120,8 +92,6 @@ export default function App() {
     rate:       apps.length ? Math.round(apps.filter(a=>['Interviewing','Offer'].includes(a.status)).length/apps.length*100) : 0,
   }
 
-  const { jobs: liveJobs, loading: jobsLoading, lastUpdated: jobsUpdated } = useLiveJobs()
-  const { news: liveNews, loading: newsLoading, lastUpdated: newsUpdated } = useLiveNews()
 
   return (
     <div className="flex min-h-screen" style={{background:'#0a1628'}}>
@@ -218,9 +188,9 @@ export default function App() {
         ) : (
           <>
             {page==='dashboard'  && <Dashboard stats={stats} apps={apps} tip={tip}/>}
-            {page==='jobs'       && <LiveJobs apps={apps} onTrack={refreshApps} liveJobs={liveJobs} jobsLoading={jobsLoading} jobsUpdated={jobsUpdated}/>}
+            {page==='jobs'       && <LiveJobs apps={apps} onTrack={refreshApps}/>}
             {page==='silicon'    && <SiliconRepublic/>}
-            {page==='svnews'     && <SVNews news={liveNews} loading={newsLoading} lastUpdated={newsUpdated}/>}
+            {page==='svnews'     && <SVNews/>}
             {page==='companies'  && <Companies/>}
             {page==='portals'    && <Portals/>}
             {page==='agencies'   && <Agencies/>}
@@ -347,10 +317,7 @@ function Dashboard({ stats, apps, tip }: { stats: any, apps: Application[], tip:
 // ============================================================================
 // LIVE JOBS
 // ============================================================================
-function LiveJobs({ apps, onTrack, liveJobs, jobsLoading, jobsUpdated }: { 
-  apps: Application[], onTrack: () => void,
-  liveJobs: any[] | null, jobsLoading: boolean, jobsUpdated: string | null
-}) {
+function LiveJobs({ apps, onTrack }: { apps: Application[], onTrack: () => void }) {
   const [roleF, setRoleF] = useState('All')
   const [sortF, setSortF] = useState('newest')
   const [search, setSearch] = useState('')
@@ -383,52 +350,7 @@ function LiveJobs({ apps, onTrack, liveJobs, jobsLoading, jobsUpdated }: {
       <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8f4f0'}}>Live Job Listings - Dublin 2026</h1>
       <p className="text-sm mb-2" style={{color:'#10b981'}}>Real roles from company career pages. HOT = posted this week.</p>
 
-      {/* LIVE INTERNET JOBS */}
-      {(liveJobs && liveJobs.length > 0) && (
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-2 h-2 rounded-full animate-pulse" style={{background:'#10b981'}}/>
-            <span className="text-xs font-semibold uppercase tracking-wider" style={{color:'#6ee7b7'}}>
-              Live from internet - {liveJobs.length} jobs found
-            </span>
-            {jobsUpdated && <span className="text-xs ml-auto" style={{color:'#4a6a7a'}}>
-              Updated {new Date(jobsUpdated).toLocaleTimeString('en-IE', {hour:'2-digit',minute:'2-digit'})}
-            </span>}
-          </div>
-          <div className="space-y-2">
-            {liveJobs.map((j: any, i: number) => (
-              <div key={i} className="card p-4" style={{borderColor:'#10b981'}}>
-                <div className="flex items-start justify-between gap-3 flex-wrap">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium" style={{color:'#e8f4f0'}}>{j.title}</span>
-                      <span style={{background:'#10b981',color:'white',padding:'1px 7px',borderRadius:'8px',fontSize:'10px',fontWeight:'700'}}>LIVE</span>
-                    </div>
-                    <div className="text-xs mb-1" style={{color:'#6ee7b7'}}>{j.company} - {j.location}</div>
-                    <div className="text-xs mb-1" style={{color:'#fde68a'}}>{j.salary}</div>
-                    <p className="text-xs" style={{color:'#94a3b8'}}>{j.desc}</p>
-                    <div className="text-xs mt-1" style={{color:'#4a6a7a'}}>via {j.source} - {j.posted}</div>
-                  </div>
-                  <a href={j.url} target="_blank" rel="noreferrer" className="btn-ghost text-xs py-1 px-3 flex items-center gap-1 flex-shrink-0">
-                    <ExternalLink size={10}/>Apply
-                  </a>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="my-4 border-t" style={{borderColor:'#1a3a5c'}}/>
-          <p className="text-xs mb-3" style={{color:'#4a6a7a'}}>Curated roles below (always up to date)</p>
-        </div>
-      )}
-
-      {jobsLoading && (
-        <div className="flex items-center gap-2 mb-4 p-3 rounded-xl" style={{background:'#0d1f35',border:'1px solid #1a3a5c'}}>
-          <div className="w-2 h-2 rounded-full animate-pulse" style={{background:'#10b981'}}/>
-          <span className="text-xs" style={{color:'#6ee7b7'}}>Fetching live jobs from LinkedIn, Indeed, Glassdoor...</span>
-        </div>
-      )}
-
-      <div className="flex flex-wrap gap-3 mb-4">
+            <div className="flex flex-wrap gap-3 mb-4">
         <input className="input flex-1 min-w-48" placeholder="Search jobs or companies..." value={search} onChange={e=>setSearch(e.target.value)}/>
         <select className="input w-48" value={roleF} onChange={e=>setRoleF(e.target.value)}>
           <option>All</option>
@@ -548,10 +470,10 @@ function SiliconRepublic() {
 // ============================================================================
 // SV NEWS
 // ============================================================================
-function SVNews({ news, loading, lastUpdated }: { news: any[], loading: boolean, lastUpdated: string | null }) {
+function SVNews() {
   const [tagF, setTagF] = useState('All')
   const tags = ['All','AI','Policy','Jobs','Funding']
-  const filteredNews = (news && news.length > 0 ? news : SV_NEWS).filter((n: any) => tagF==='All' || n.tag===tagF)
+  const filteredNews = SV_NEWS.filter(n => tagF==='All' || n.tag===tagF)
   const tagStyle: Record<string,string> = {
     AI:'background:#1e3a5f;color:#93c5fd',Policy:'background:#0e2a4a;color:#bae6fd',
     Jobs:'background:#064e3b;color:#6ee7b7',Funding:'background:#78350f;color:#fde68a'
