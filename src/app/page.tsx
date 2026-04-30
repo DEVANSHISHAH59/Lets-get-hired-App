@@ -481,13 +481,7 @@ function SVNews() {
   return (
     <div className="animate-fade-in">
       <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8f4f0'}}>Silicon Valley & Global AI News</h1>
-      <div className="flex items-center gap-2 mb-3">
-        <p className="text-sm" style={{color:'#10b981'}}>Live news fetched from TechCrunch, Silicon Republic, VentureBeat.</p>
-        {lastUpdated && <span className="text-xs ml-auto" style={{color:'#4a6a7a'}}>
-          Updated {new Date(lastUpdated).toLocaleTimeString('en-IE',{hour:'2-digit',minute:'2-digit'})}
-        </span>}
-        <div className="w-2 h-2 rounded-full animate-pulse flex-shrink-0" style={{background:'#10b981'}}/>
-      </div>
+      <p className="text-sm mb-3" style={{color:'#10b981'}}>Latest AI and tech news - Silicon Republic, TechCrunch, VentureBeat.</p>
       <div className="rounded-xl p-4 mb-4" style={{background:'#0e2a4a',border:'1px solid #10b981'}}>
         <div className="text-xs font-semibold mb-1" style={{color:'#fde68a',textTransform:'uppercase'}}>* EU AI Act enforcement starts August 2, 2026</div>
         <div className="text-sm" style={{color:'#ecfdf5'}}>Your EU AI Act knowledge is urgently in demand right now. Companies are hiring AI governance and T&S analysts at unprecedented speed.</div>
