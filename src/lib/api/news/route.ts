@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-export const revalidate = 1800 // refresh every 30 mins
+export const revalidate = 1800
 
 async function fetchRSSFeed(url: string, source: string) {
   try {
@@ -9,23 +9,25 @@ async function fetchRSSFeed(url: string, source: string) {
       headers: { 'User-Agent': 'Mozilla/5.0' },
     })
     const text = await res.text()
-
-    // Parse RSS items
     const items: any[] = []
-    const itemMatches = text.matchAll(/<item>([\s\S]*?)<\/item>/g)
 
-    for (const match of itemMatches) {
+    // Use exec() loop instead of matchAll() to avoid iterator issues
+    const itemRegex = /<item>([\s\S]*?)<\/item>/g
+    let match
+    while ((match = itemRegex.exec(text)) !== null) {
       const item = match[1]
-      const title = item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/)?.[1]
-        || item.match(/<title>(.*?)<\/title>/)?.[1]
-        || ''
-      const link = item.match(/<link>(.*?)<\/link>/)?.[1]
-        || item.match(/<guid>(.*?)<\/guid>/)?.[1]
-        || ''
-      const pubDate = item.match(/<pubDate>(.*?)<\/pubDate>/)?.[1] || ''
-      const description = item.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/)?.[1]
-        || item.match(/<description>(.*?)<\/description>/)?.[1]
-        || ''
+      const titleMatch = item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/) 
+        || item.match(/<title>(.*?)<\/title>/)
+      const linkMatch = item.match(/<link>(.*?)<\/link>/) 
+        || item.match(/<guid>(.*?)<\/guid>/)
+      const pubMatch = item.match(/<pubDate>(.*?)<\/pubDate>/)
+      const descMatch = item.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/)
+        || item.match(/<description>(.*?)<\/description>/)
+
+      const title = titleMatch?.[1] || ''
+      const link = linkMatch?.[1] || ''
+      const pubDate = pubMatch?.[1] || ''
+      const description = descMatch?.[1] || ''
 
       if (title && link) {
         items.push({
@@ -44,36 +46,28 @@ async function fetchRSSFeed(url: string, source: string) {
   }
 }
 
-// Tag news items by topic
 function tagItem(title: string): string {
   const t = title.toLowerCase()
   if (t.includes('trust') || t.includes('safety') || t.includes('content mod')) return 'T&S'
-  if (t.includes('ai act') || t.includes('regulation') || t.includes('policy') || t.includes('gdpr') || t.includes('dsa')) return 'Policy'
-  if (t.includes('job') || t.includes('hiring') || t.includes('recruit') || t.includes('layoff')) return 'Jobs'
-  if (t.includes('openai') || t.includes('anthropic') || t.includes('gemini') || t.includes('llm') || t.includes('gpt')) return 'AI'
-  if (t.includes('dublin') || t.includes('ireland') || t.includes('tech') ) return 'Ireland'
+  if (t.includes('ai act') || t.includes('regulation') || t.includes('policy') || t.includes('gdpr')) return 'Policy'
+  if (t.includes('job') || t.includes('hiring') || t.includes('recruit')) return 'Jobs'
+  if (t.includes('openai') || t.includes('anthropic') || t.includes('llm') || t.includes('gpt')) return 'AI'
+  if (t.includes('dublin') || t.includes('ireland')) return 'Ireland'
   return 'AI'
 }
 
 export async function GET() {
-  // Fetch from multiple live RSS feeds simultaneously
-  const feeds = await Promise.allSettled([
-    fetchRSSFeed('https://feeds.feedburner.com/techcrunch/startups', 'TechCrunch'),
+  const results = await Promise.allSettled([
     fetchRSSFeed('https://techcrunch.com/category/artificial-intelligence/feed/', 'TechCrunch AI'),
     fetchRSSFeed('https://www.siliconrepublic.com/feed', 'Silicon Republic'),
     fetchRSSFeed('https://venturebeat.com/category/ai/feed/', 'VentureBeat'),
-    fetchRSSFeed('https://feeds.feedburner.com/oreilly/radar/atom', "O'Reilly"),
   ])
 
   const allNews: any[] = []
-
-  feeds.forEach(result => {
-    if (result.status === 'fulfilled') {
-      allNews.push(...result.value)
-    }
+  results.forEach(r => {
+    if (r.status === 'fulfilled') allNews.push(...r.value)
   })
 
-  // Sort by date, deduplicate, tag
   const seen = new Set<string>()
   const deduped = allNews
     .filter(item => {
