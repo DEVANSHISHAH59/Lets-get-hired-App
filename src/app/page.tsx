@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { useLiveJobs, useLiveNews } from '@/hooks/useLiveData'
 import { supabase, db, Application, CVData } from '@/lib/supabase'
 import { JOBS, COMPANIES, PORTALS, AGENCIES, QUOTES, TIPS, SV_NEWS } from '@/lib/data'
 import {
@@ -9,6 +8,35 @@ import {
   ExternalLink, Plus, Trash2, RefreshCw, Star, Search, Filter,
   CheckCircle, Clock, XCircle, AlertCircle, Award, Target, Zap
 } from 'lucide-react'
+
+// -- Live data hooks (inline) ------------------------------------------------
+function useLiveJobs() {
+  const [jobs, setJobs] = useState<any[] | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null)
+  useEffect(() => {
+    fetch('/api/jobs')
+      .then(r => r.json())
+      .then(data => { setJobs(data.jobs); setLastUpdated(data.lastUpdated) })
+      .catch(() => setJobs(null))
+      .finally(() => setLoading(false))
+  }, [])
+  return { jobs, loading, lastUpdated }
+}
+
+function useLiveNews() {
+  const [news, setNews] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null)
+  useEffect(() => {
+    fetch('/api/news')
+      .then(r => r.json())
+      .then(data => { setNews(data.news || []); setLastUpdated(data.lastUpdated) })
+      .catch(() => setNews([]))
+      .finally(() => setLoading(false))
+  }, [])
+  return { news, loading, lastUpdated }
+}
 
 // -- helpers ------------------------------------------------------------------
 const ROLE_COLORS: Record<string, string> = {
