@@ -487,50 +487,7 @@ function SVNews() {
         <div className="text-sm" style={{color:'#ecfdf5'}}>Your EU AI Act knowledge is urgently in demand right now. Companies are hiring AI governance and T&S analysts at unprecedented speed.</div>
       </div>
 
-      {/* LIVE NEWS */}
-      {loading && (
-        <div className="flex items-center gap-2 mb-4 p-3 rounded-xl" style={{background:'#0d1f35',border:'1px solid #1a3a5c'}}>
-          <div className="w-2 h-2 rounded-full animate-pulse" style={{background:'#10b981'}}/>
-          <span className="text-xs" style={{color:'#6ee7b7'}}>Fetching latest news from TechCrunch, Silicon Republic, VentureBeat...</span>
-        </div>
-      )}
 
-      {news.length > 0 && (
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-2 h-2 rounded-full animate-pulse" style={{background:'#10b981'}}/>
-            <span className="text-xs font-semibold uppercase tracking-wider" style={{color:'#6ee7b7'}}>Live news - {news.length} stories</span>
-          </div>
-          <div className="space-y-3">
-            {news.map((item: any, i: number) => {
-              const tagColors: Record<string,string> = {
-                'T&S':'background:#064e3b;color:#6ee7b7',
-                'Policy':'background:#0e2a4a;color:#93c5fd',
-                'Jobs':'background:#3b2800;color:#fde68a',
-                'AI':'background:#1a3a5c;color:#bae6fd',
-                'Ireland':'background:#064e3b;color:#86efac',
-              }
-              const tagStyle = tagColors[item.tag] || 'background:#1a3a5c;color:#bae6fd'
-              return (
-                <div key={i} className="card p-4">
-                  <div className="flex items-start justify-between gap-3 flex-wrap">
-                    <div className="flex-1 min-w-0">
-                      <a href={item.url} target="_blank" rel="noreferrer"
-                        className="text-sm font-medium hover:underline" style={{color:'#6ee7b7',textDecoration:'none'}}>
-                        {item.title}
-                      </a>
-                      <div className="text-xs mt-1" style={{color:'#4a6a7a'}}>{item.source} - {item.pubDate ? new Date(item.pubDate).toLocaleDateString('en-IE') : 'Today'}</div>
-                      {item.desc && <p className="text-xs mt-1" style={{color:'#94a3b8'}}>{item.desc.slice(0,120)}...</p>}
-                    </div>
-                    <span className="chip text-xs flex-shrink-0" style={{...Object.fromEntries(tagStyle.split(';').map((s: string)=>s.split(':').map((x: string)=>x.trim())))}}>{item.tag}</span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          <div className="my-4 border-t" style={{borderColor:'#1a3a5c'}}/>
-        </div>
-      )}
       <div className="flex gap-2 mb-4 flex-wrap">
         {tags.map((t:string)=>(
           <button key={t} onClick={()=>setTagF(t)}
