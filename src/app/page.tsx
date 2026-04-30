@@ -1331,292 +1331,586 @@ function Tracker({ apps, onRefresh }: { apps: Application[]; onRefresh: () => vo
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CV EDITOR — 3 layouts + PDF + DOCX download
+// CV EDITOR — ATS layout, drag-and-drop sections, font picker, PDF + DOCX
 // ═══════════════════════════════════════════════════════════════════════════════
-const CV_LAYOUTS = [
-  { id: 'classic', label: 'Classic',  desc: 'Serif, traditional' },
-  { id: 'modern',  label: 'Modern',   desc: 'Clean, colour accent' },
-  { id: 'minimal', label: 'Minimal',  desc: 'Bold name, sparse' },
+
+interface CVSection { id: string; type: string; title: string; visible: boolean; data: any }
+interface CVDoc { font: string; sections: CVSection[] }
+
+const CV_FONTS = [
+  { id: 'Calibri, Arial, sans-serif',   label: 'Calibri (ATS)' },
+  { id: 'Arial, sans-serif',             label: 'Arial' },
+  { id: 'Georgia, serif',               label: 'Georgia' },
+  { id: '"Times New Roman", serif',     label: 'Times New Roman' },
+  { id: 'Garamond, Georgia, serif',     label: 'Garamond' },
 ]
 
-function CVPreview({ form, layout }: { form: CVData; layout: string }) {
-  function bl(t: string) {
-    return t.split('\n').filter(Boolean).map((b, i) => (
-      <div key={i} style={{ margin: '2px 0', paddingLeft: '10px', borderLeft: '2px solid #d1fae5' }}>{b.replace(/^[-•]\s*/, '')}</div>
-    ))
-  }
+const CV_SECTION_TYPES = [
+  { type: 'summary',        label: 'Summary' },
+  { type: 'experience',     label: 'Experience' },
+  { type: 'projects',       label: 'Projects' },
+  { type: 'education',      label: 'Education' },
+  { type: 'certifications', label: 'Certifications' },
+  { type: 'skills',         label: 'Skills' },
+  { type: 'languages',      label: 'Languages' },
+  { type: 'custom',         label: 'Custom Section' },
+]
 
-  if (layout === 'modern') return (
-    <div style={{ fontFamily: 'DM Sans, sans-serif', color: '#1a1a1a', fontSize: '12px', lineHeight: 1.65 }}>
-      <div style={{ borderTop: '4px solid #059669', paddingTop: '14px', marginBottom: '12px' }}>
-        <div style={{ fontSize: '22px', fontWeight: '700', color: '#1e3a5f', letterSpacing: '-0.3px' }}>{form.full_name}</div>
-        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '3px' }}>{form.contact_line}</div>
-      </div>
-      {[{ h: 'Profile', t: form.summary }, { h: 'Core Skills', t: form.skills }].map(s => (
-        <div key={s.h} style={{ marginBottom: '12px' }}>
-          <div style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' as const, letterSpacing: '1.5px', color: '#059669', marginBottom: '5px' }}>{s.h}</div>
-          <p style={{ fontSize: '11.5px', color: '#334155' }}>{s.t}</p>
-        </div>
-      ))}
-      <div style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' as const, letterSpacing: '1.5px', color: '#059669', marginBottom: '8px' }}>Experience</div>
-      {[{ t: form.exp1_title, c: form.exp1_company, d: form.exp1_dates, b: form.exp1_bullets },
-        { t: form.exp2_title, c: form.exp2_company, d: form.exp2_dates, b: form.exp2_bullets }].map((e, i) => (
-        <div key={i} style={{ marginBottom: '12px', paddingLeft: '10px', borderLeft: '3px solid #d1fae5' }}>
-          <div style={{ fontWeight: '600', fontSize: '12.5px', color: '#1e3a5f' }}>{e.t}</div>
-          <div style={{ fontSize: '11px', color: '#059669', marginBottom: '3px' }}>{e.c} · {e.d}</div>
-          <div style={{ fontSize: '11.5px', color: '#475569' }}>{bl(e.b)}</div>
-        </div>
-      ))}
-      <div style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' as const, letterSpacing: '1.5px', color: '#059669', marginBottom: '5px' }}>Education</div>
-      <p style={{ fontSize: '11.5px', color: '#334155' }}>{form.education.split('\n').map((l, i) => <span key={i}>{l}<br /></span>)}</p>
+function mkid() { return Math.random().toString(36).slice(2, 8) }
+
+const DEFAULT_CV_DOC: CVDoc = {
+  font: 'Calibri, Arial, sans-serif',
+  sections: [
+    { id: 'hdr', type: 'header', title: 'Header', visible: true, data: {
+      name: 'Devanshi Shah', location: 'Dublin, Ireland',
+      email: 'devanshishah059@gmail.com', phone: '+353868182884',
+      linkedin: 'in/devanshi-shah059', github: 'github.com/DEVANSHISHAH59',
+    }},
+    { id: 'sum', type: 'summary', title: 'SUMMARY', visible: true, data: {
+      text: 'Engineering Analyst with 4+ years of experience in Trust & Safety, ML evaluation, and data-driven risk measurement. MSc in Business Analytics with hands-on experience benchmarking LLM outputs, analyzing classifier failure modes, and designing risk metrics to improve content safety systems.',
+    }},
+    { id: 'exp', type: 'experience', title: 'EXPERIENCE', visible: true, data: [
+      { id: 'e1', title: 'Trust and Safety AI Analyst', company: 'Covalen Solutions Ltd (Meta Contract)',
+        dates: 'July 2024 – Present', location: 'Dublin, Ireland',
+        bullets: '• Conduct structured LLM safety evaluations across text, video, audio, and workflow-based use cases, applying benchmark metrics to assess policy violations, hallucinations, and quality regressions.\n• Built and analyzed evaluation datasets (15K+ samples) used to benchmark safety classifiers and identify emerging abuse patterns.\n• Partner with engineering and quality teams to evaluate ranking quality signals and content safety indicators.\n• Reduced annotation disagreement, improving quality acceptance rates to 95%.\n• Performed SQL-driven investigations into fraud, impersonation, and malware-related abuse patterns.\n• Serve as Primary Subject Matter Expert (PSME) and POC for the Nepal market, independently managing Trust and Safety operations.' },
+      { id: 'e2', title: 'Business Analyst - Support Analytics', company: 'Sunrise Enterprises Pvt Ltd',
+        dates: 'Oct 2020 – Oct 2022', location: 'Kathmandu, Nepal',
+        bullets: '• Improved demand forecasting accuracy by 10% by developing SQL-based reporting models analyzing ticket volume trends.\n• Increased SLA compliance from 78% to 84% by designing monitoring frameworks.\n• Reduced backlog growth by 22% by leading workflow redesign initiatives.\n• Led requirements definition across eight release cycles, authoring business and functional specifications.' },
+    ]},
+    { id: 'proj', type: 'projects', title: 'PROJECTS', visible: true, data: [
+      { id: 'p1', title: 'Sentinel AI Moderator – Content Safety Dashboard Prototype',
+        url: 'sentinel-ai-moderator-dqtmurpww6ta8kcrgs6kat.streamlit.app',
+        description: 'Built a prototype moderation analytics system that detects policy violations, assigns risk scores to user-generated content, and visualizes abuse trends for Trust & Safety workflows.' },
+      { id: 'p2', title: 'AI Retail Analytics Dashboard – Customer Behavior Insights',
+        url: 'ai-retail-analytics-vqppazwcawhihgyyy6dkei.streamlit.app',
+        description: 'Interactive analytics dashboard using clustering and market basket analysis to uncover customer segments and product purchase patterns from retail transaction data.' },
+      { id: 'p3', title: 'Churn Risk Insights Dashboard – Customer Retention Analytics',
+        url: 'churn-prediction-ml-fnf2kbnuknqkeapudnjgxk.streamlit.app',
+        description: 'Machine learning dashboard that predicts customer churn probability and identifies high-risk users to support targeted retention strategies.' },
+    ]},
+    { id: 'edu', type: 'education', title: 'EDUCATION', visible: true, data: [
+      { id: 'ed1', degree: 'MSc Business Analytics', institution: 'Dublin Business School', location: 'Dublin, Ireland', dates: '' },
+      { id: 'ed2', degree: 'Bachelor of Business Administration', institution: 'Tribhuvan University – Kathmandu, Nepal', location: 'Kathmandu, Nepal', dates: '' },
+    ]},
+    { id: 'cert', type: 'certifications', title: 'CERTIFICATIONS', visible: true, data: [
+      { id: 'c1', name: 'Certified Scrum Product Owner (CSPO)', issuer: 'Scrum Alliance' },
+      { id: 'c2', name: 'Product Management with Applied AI', issuer: 'IIT Roorkee via Masai' },
+    ]},
+    { id: 'skl', type: 'skills', title: 'SKILLS', visible: true, data: [
+      { id: 'sg1', category: 'Trust & Safety & Risk Analysis', skills: 'Abuse Detection · Spam & Fraud Analysis · Policy Risk Identification · Sensitive Content Review · Risk Measurement · Content Safety Evaluation' },
+      { id: 'sg2', category: 'Machine Learning & Data Analysis', skills: 'Python · SQL · Machine Learning Models · LLM Evaluation · Dataset Creation · Classifier Benchmarking · Feature Engineering' },
+      { id: 'sg3', category: 'Analytics & Metrics', skills: 'Statistical Analysis · Hypothesis Testing · Data Visualization · Trend Detection · Risk Metrics Design · A/B Testing' },
+      { id: 'sg4', category: 'Collaboration & Project Delivery', skills: 'Project Scoping · Cross-functional Collaboration · Stakeholder Reporting · Requirements Definition · Process Improvement' },
+    ]},
+    { id: 'lang', type: 'languages', title: 'LANGUAGES', visible: true, data: [
+      { id: 'l1', language: 'English', level: 'Native' },
+      { id: 'l2', language: 'Hindi', level: 'Bilingual' },
+      { id: 'l3', language: 'Nepali', level: 'Native' },
+    ]},
+  ],
+}
+
+function CVPreviewATS({ doc }: { doc: CVDoc }) {
+  const accent = '#1e3a5f'
+  const rule = <hr style={{ border: 'none', borderTop: '1px solid #cbd5e1', margin: '3px 0 7px' }} />
+  const sh = (title: string) => (
+    <div>
+      <div style={{ fontWeight: '700', fontSize: '10.5px', textTransform: 'uppercase' as const, letterSpacing: '1.2px', color: accent }}>{title}</div>
+      {rule}
     </div>
   )
-
-  if (layout === 'minimal') return (
-    <div style={{ fontFamily: 'Sora, sans-serif', color: '#1a1a1a', fontSize: '12px', lineHeight: 1.65 }}>
-      <div style={{ marginBottom: '16px' }}>
-        <div style={{ fontSize: '26px', fontWeight: '800', color: '#1e3a5f', letterSpacing: '-0.5px' }}>{form.full_name}</div>
-        <div style={{ width: '40px', height: '3px', background: 'linear-gradient(90deg,#059669,#f59e0b)', borderRadius: '2px', margin: '6px 0' }} />
-        <div style={{ fontSize: '11px', color: '#64748b' }}>{form.contact_line}</div>
-      </div>
-      {[{ h: 'About', t: form.summary }, { h: 'Skills', t: form.skills }].map(s => (
-        <div key={s.h} style={{ marginBottom: '12px' }}>
-          <div style={{ fontSize: '11px', fontWeight: '700', color: '#1e40af', marginBottom: '4px', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>{s.h}</div>
-          <p style={{ fontSize: '11.5px', color: '#374151' }}>{s.t}</p>
-        </div>
-      ))}
-      <div style={{ fontSize: '11px', fontWeight: '700', color: '#1e40af', marginBottom: '8px', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>Work History</div>
-      {[{ t: form.exp1_title, c: form.exp1_company, d: form.exp1_dates, b: form.exp1_bullets },
-        { t: form.exp2_title, c: form.exp2_company, d: form.exp2_dates, b: form.exp2_bullets }].map((e, i) => (
-        <div key={i} style={{ marginBottom: '12px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' as const }}>
-            <div style={{ fontWeight: '700', fontSize: '12.5px' }}>{e.t}</div>
-            <div style={{ fontSize: '10px', color: '#9ca3af', whiteSpace: 'nowrap' as const }}>{e.d}</div>
-          </div>
-          <div style={{ fontSize: '11px', color: '#db2777', marginBottom: '3px' }}>{e.c}</div>
-          <div style={{ fontSize: '11.5px', color: '#4b5563' }}>{bl(e.b)}</div>
-        </div>
-      ))}
-      <div style={{ fontSize: '11px', fontWeight: '700', color: '#1e40af', marginBottom: '5px', textTransform: 'uppercase' as const, letterSpacing: '1px' }}>Education</div>
-      <p style={{ fontSize: '11.5px', color: '#374151' }}>{form.education.split('\n').map((l, i) => <span key={i}>{l}<br /></span>)}</p>
-    </div>
-  )
-
-  // Classic
+  const buls = (txt: string) => txt.split('\n').filter(Boolean).map((b, i) => (
+    <div key={i} style={{ fontSize: '10.5px', marginBottom: '2px' }}>{b.startsWith('•') ? b : '• ' + b.replace(/^[-]\s*/, '')}</div>
+  ))
   return (
-    <div style={{ fontFamily: 'Georgia, serif', color: '#1a1a1a', fontSize: '12px', lineHeight: 1.65 }}>
-      <div style={{ textAlign: 'center' as const, borderBottom: '2px solid #1e3a5f', paddingBottom: '10px', marginBottom: '12px' }}>
-        <div style={{ fontSize: '22px', fontWeight: '700', color: '#1e3a5f', letterSpacing: '0.5px' }}>{form.full_name}</div>
-        <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '3px' }}>{form.contact_line}</div>
-      </div>
-      {[{ h: 'Professional Summary', t: form.summary }, { h: 'Key Skills', t: form.skills }].map(s => (
-        <div key={s.h} style={{ marginBottom: '10px' }}>
-          <div style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' as const, letterSpacing: '1.5px', borderBottom: '1px solid #e2e8f0', paddingBottom: '2px', marginBottom: '5px', color: '#1e3a5f' }}>{s.h}</div>
-          <p style={{ fontSize: '11.5px' }}>{s.t}</p>
-        </div>
-      ))}
-      <div style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' as const, letterSpacing: '1.5px', borderBottom: '1px solid #e2e8f0', paddingBottom: '2px', marginBottom: '8px', color: '#1e3a5f' }}>Professional Experience</div>
-      {[{ t: form.exp1_title, c: form.exp1_company, d: form.exp1_dates, b: form.exp1_bullets },
-        { t: form.exp2_title, c: form.exp2_company, d: form.exp2_dates, b: form.exp2_bullets }].map((e, i) => (
-        <div key={i} style={{ marginBottom: '10px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' as const }}>
-            <div style={{ fontWeight: '700', fontSize: '12.5px' }}>{e.t}, {e.c}</div>
-            <div style={{ fontSize: '10.5px', color: '#64748b', fontStyle: 'italic' }}>{e.d}</div>
+    <div style={{ fontFamily: doc.font, color: '#1a1a1a', fontSize: '11px', lineHeight: '1.5' }}>
+      {doc.sections.filter(s => s.visible).map(sec => {
+        if (sec.type === 'header') {
+          const d = sec.data
+          return (
+            <div key={sec.id} style={{ textAlign: 'center' as const, marginBottom: '12px' }}>
+              <div style={{ fontSize: '22px', fontWeight: '700', color: accent, marginBottom: '4px' }}>{d.name}</div>
+              <div style={{ fontSize: '10px', color: '#475569', display: 'flex', flexWrap: 'wrap' as const, justifyContent: 'center', gap: '8px' }}>
+                {d.location && <span>📍 {d.location}</span>}
+                {d.email    && <span>✉ {d.email}</span>}
+                {d.phone    && <span>📱 {d.phone}</span>}
+                {d.linkedin && <span>🔗 {d.linkedin}</span>}
+                {d.github   && <span>💻 {d.github}</span>}
+              </div>
+              <hr style={{ border: 'none', borderTop: '1.5px solid #94a3b8', margin: '8px 0 0' }} />
+            </div>
+          )
+        }
+        if (sec.type === 'summary') return (
+          <div key={sec.id} style={{ marginBottom: '12px' }}>
+            {sh(sec.title)}
+            <p style={{ fontSize: '10.5px', color: '#334155', margin: 0 }}>{sec.data.text}</p>
           </div>
-          <div style={{ fontSize: '11.5px', marginTop: '3px' }}>{bl(e.b)}</div>
-        </div>
-      ))}
-      <div style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' as const, letterSpacing: '1.5px', borderBottom: '1px solid #e2e8f0', paddingBottom: '2px', marginBottom: '5px', color: '#1e3a5f' }}>Education</div>
-      <p style={{ fontSize: '11.5px' }}>{form.education.split('\n').map((l, i) => <span key={i}>{l}<br /></span>)}</p>
+        )
+        if (sec.type === 'experience') return (
+          <div key={sec.id} style={{ marginBottom: '12px' }}>
+            {sh(sec.title)}
+            {(sec.data as any[]).map((e: any) => (
+              <div key={e.id} style={{ marginBottom: '10px' }}>
+                <div style={{ fontWeight: '700', fontSize: '11.5px' }}>{e.title}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' as const, marginBottom: '3px' }}>
+                  <span style={{ fontWeight: '600', fontSize: '10.5px', color: accent }}>{e.company}</span>
+                  <span style={{ fontSize: '10px', color: '#64748b' }}>{e.dates}{e.location ? '  ·  ' + e.location : ''}</span>
+                </div>
+                {buls(e.bullets)}
+              </div>
+            ))}
+          </div>
+        )
+        if (sec.type === 'projects') return (
+          <div key={sec.id} style={{ marginBottom: '12px' }}>
+            {sh(sec.title)}
+            {(sec.data as any[]).map((p: any) => (
+              <div key={p.id} style={{ marginBottom: '8px' }}>
+                <div style={{ fontWeight: '700', fontSize: '11.5px' }}>{p.title}</div>
+                {p.url && <div style={{ fontSize: '10px', color: '#2563eb', marginBottom: '1px' }}>{p.url}</div>}
+                <div style={{ fontSize: '10.5px', color: '#334155' }}>• {p.description}</div>
+              </div>
+            ))}
+          </div>
+        )
+        if (sec.type === 'education') return (
+          <div key={sec.id} style={{ marginBottom: '12px' }}>
+            {sh(sec.title)}
+            {(sec.data as any[]).map((e: any) => (
+              <div key={e.id} style={{ marginBottom: '6px' }}>
+                <div style={{ fontWeight: '700', fontSize: '11.5px' }}>{e.degree}</div>
+                <div style={{ fontSize: '10.5px', color: '#475569' }}>{[e.institution, e.location, e.dates].filter(Boolean).join(' · ')}</div>
+              </div>
+            ))}
+          </div>
+        )
+        if (sec.type === 'certifications') return (
+          <div key={sec.id} style={{ marginBottom: '12px' }}>
+            {sh(sec.title)}
+            {(sec.data as any[]).map((c: any) => (
+              <div key={c.id} style={{ marginBottom: '5px' }}>
+                <div style={{ fontWeight: '700', fontSize: '11.5px' }}>{c.name}</div>
+                <div style={{ fontSize: '10.5px', color: '#475569' }}>{c.issuer}</div>
+              </div>
+            ))}
+          </div>
+        )
+        if (sec.type === 'skills') return (
+          <div key={sec.id} style={{ marginBottom: '12px' }}>
+            {sh(sec.title)}
+            {(sec.data as any[]).map((g: any) => (
+              <div key={g.id} style={{ marginBottom: '3px', fontSize: '10.5px' }}>
+                <strong>{g.category}  </strong>{g.skills}
+              </div>
+            ))}
+          </div>
+        )
+        if (sec.type === 'languages') return (
+          <div key={sec.id} style={{ marginBottom: '12px' }}>
+            {sh(sec.title)}
+            {(sec.data as any[]).map((l: any) => (
+              <div key={l.id} style={{ fontSize: '10.5px' }}>{l.language} — {l.level}</div>
+            ))}
+          </div>
+        )
+        return (
+          <div key={sec.id} style={{ marginBottom: '12px' }}>
+            {sh(sec.title)}
+            <p style={{ fontSize: '10.5px', color: '#334155', whiteSpace: 'pre-wrap' as const, margin: 0 }}>{sec.data?.text}</p>
+          </div>
+        )
+      })}
     </div>
   )
 }
 
+function SectionEditForm({ section, onChange }: { section: CVSection; onChange: (s: CVSection) => void }) {
+  function upd(data: any) { onChange({ ...section, data }) }
+  const inp = (val: string, ph: string, setter: (v: string) => void) => (
+    <input className="input" placeholder={ph} value={val || ''} onChange={e => setter(e.target.value)} />
+  )
+
+  if (section.type === 'header') {
+    const d = section.data
+    return (
+      <div className="space-y-2">
+        {inp(d.name, 'Full name', v => upd({...d, name: v}))}
+        {inp(d.location, 'Location', v => upd({...d, location: v}))}
+        {inp(d.email, 'Email', v => upd({...d, email: v}))}
+        {inp(d.phone, 'Phone', v => upd({...d, phone: v}))}
+        {inp(d.linkedin, 'LinkedIn (e.g. in/yourname)', v => upd({...d, linkedin: v}))}
+        {inp(d.github, 'GitHub (e.g. github.com/yourname)', v => upd({...d, github: v}))}
+      </div>
+    )
+  }
+  if (section.type === 'summary') return (
+    <textarea className="input" rows={5} placeholder="Professional summary..." value={section.data.text || ''} onChange={e => upd({...section.data, text: e.target.value})} />
+  )
+  if (section.type === 'experience') {
+    const items: any[] = section.data
+    return (
+      <div className="space-y-3">
+        {items.map((item, idx) => (
+          <div key={item.id} className="rounded-xl p-3 space-y-2" style={{ background: '#ecfdf5', border: '1px solid #a7f3d0' }}>
+            <div className="flex justify-between"><span className="text-xs font-bold" style={{ color: '#064e3b' }}>Position {idx+1}</span>
+              <button onClick={() => upd(items.filter((_,i)=>i!==idx))} style={{ background:'none',border:'none',cursor:'pointer',color:'#be123c',fontSize:'11px' }}>Remove</button>
+            </div>
+            <input className="input" placeholder="Job title" value={item.title} onChange={e => upd(items.map((it,i)=>i===idx?{...it,title:e.target.value}:it))} />
+            <input className="input" placeholder="Company" value={item.company} onChange={e => upd(items.map((it,i)=>i===idx?{...it,company:e.target.value}:it))} />
+            <div className="flex gap-2">
+              <input className="input" placeholder="Dates" value={item.dates} onChange={e => upd(items.map((it,i)=>i===idx?{...it,dates:e.target.value}:it))} />
+              <input className="input" placeholder="Location" value={item.location} onChange={e => upd(items.map((it,i)=>i===idx?{...it,location:e.target.value}:it))} />
+            </div>
+            <textarea className="input" rows={5} placeholder="Bullets (one per line, start with •)" value={item.bullets} onChange={e => upd(items.map((it,i)=>i===idx?{...it,bullets:e.target.value}:it))} />
+          </div>
+        ))}
+        <button className="btn-ghost w-full text-xs" onClick={() => upd([...items,{id:mkid(),title:'',company:'',dates:'',location:'',bullets:''}])}>+ Add Position</button>
+      </div>
+    )
+  }
+  if (section.type === 'projects') {
+    const items: any[] = section.data
+    return (
+      <div className="space-y-3">
+        {items.map((item, idx) => (
+          <div key={item.id} className="rounded-xl p-3 space-y-2" style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+            <div className="flex justify-between"><span className="text-xs font-bold" style={{ color: '#1e40af' }}>Project {idx+1}</span>
+              <button onClick={() => upd(items.filter((_,i)=>i!==idx))} style={{ background:'none',border:'none',cursor:'pointer',color:'#be123c',fontSize:'11px' }}>Remove</button>
+            </div>
+            <input className="input" placeholder="Project title" value={item.title} onChange={e => upd(items.map((it,i)=>i===idx?{...it,title:e.target.value}:it))} />
+            <input className="input" placeholder="URL" value={item.url} onChange={e => upd(items.map((it,i)=>i===idx?{...it,url:e.target.value}:it))} />
+            <textarea className="input" rows={3} placeholder="Description" value={item.description} onChange={e => upd(items.map((it,i)=>i===idx?{...it,description:e.target.value}:it))} />
+          </div>
+        ))}
+        <button className="btn-ghost w-full text-xs" onClick={() => upd([...items,{id:mkid(),title:'',url:'',description:''}])}>+ Add Project</button>
+      </div>
+    )
+  }
+  if (section.type === 'education') {
+    const items: any[] = section.data
+    return (
+      <div className="space-y-3">
+        {items.map((item, idx) => (
+          <div key={item.id} className="rounded-xl p-3 space-y-2" style={{ background: '#fdf2f8', border: '1px solid #fbcfe8' }}>
+            <div className="flex justify-between"><span className="text-xs font-bold" style={{ color: '#9d174d' }}>Degree {idx+1}</span>
+              <button onClick={() => upd(items.filter((_,i)=>i!==idx))} style={{ background:'none',border:'none',cursor:'pointer',color:'#be123c',fontSize:'11px' }}>Remove</button>
+            </div>
+            <input className="input" placeholder="Degree / qualification" value={item.degree} onChange={e => upd(items.map((it,i)=>i===idx?{...it,degree:e.target.value}:it))} />
+            <input className="input" placeholder="Institution" value={item.institution} onChange={e => upd(items.map((it,i)=>i===idx?{...it,institution:e.target.value}:it))} />
+            <div className="flex gap-2">
+              <input className="input" placeholder="Location" value={item.location} onChange={e => upd(items.map((it,i)=>i===idx?{...it,location:e.target.value}:it))} />
+              <input className="input" placeholder="Dates" value={item.dates} onChange={e => upd(items.map((it,i)=>i===idx?{...it,dates:e.target.value}:it))} />
+            </div>
+          </div>
+        ))}
+        <button className="btn-ghost w-full text-xs" onClick={() => upd([...items,{id:mkid(),degree:'',institution:'',location:'',dates:''}])}>+ Add Education</button>
+      </div>
+    )
+  }
+  if (section.type === 'certifications') {
+    const items: any[] = section.data
+    return (
+      <div className="space-y-3">
+        {items.map((item, idx) => (
+          <div key={item.id} className="rounded-xl p-3 space-y-2" style={{ background: '#fffbeb', border: '1px solid #fde68a' }}>
+            <div className="flex justify-between"><span className="text-xs font-bold" style={{ color: '#92400e' }}>Cert {idx+1}</span>
+              <button onClick={() => upd(items.filter((_,i)=>i!==idx))} style={{ background:'none',border:'none',cursor:'pointer',color:'#be123c',fontSize:'11px' }}>Remove</button>
+            </div>
+            <input className="input" placeholder="Certification name" value={item.name} onChange={e => upd(items.map((it,i)=>i===idx?{...it,name:e.target.value}:it))} />
+            <input className="input" placeholder="Issuing body" value={item.issuer} onChange={e => upd(items.map((it,i)=>i===idx?{...it,issuer:e.target.value}:it))} />
+          </div>
+        ))}
+        <button className="btn-ghost w-full text-xs" onClick={() => upd([...items,{id:mkid(),name:'',issuer:''}])}>+ Add Certification</button>
+      </div>
+    )
+  }
+  if (section.type === 'skills') {
+    const items: any[] = section.data
+    return (
+      <div className="space-y-3">
+        {items.map((item, idx) => (
+          <div key={item.id} className="rounded-xl p-3 space-y-2" style={{ background: '#ecfdf5', border: '1px solid #a7f3d0' }}>
+            <div className="flex justify-between"><span className="text-xs font-bold" style={{ color: '#064e3b' }}>Group {idx+1}</span>
+              <button onClick={() => upd(items.filter((_,i)=>i!==idx))} style={{ background:'none',border:'none',cursor:'pointer',color:'#be123c',fontSize:'11px' }}>Remove</button>
+            </div>
+            <input className="input" placeholder="Category (e.g. Technical Skills)" value={item.category} onChange={e => upd(items.map((it,i)=>i===idx?{...it,category:e.target.value}:it))} />
+            <textarea className="input" rows={2} placeholder="Skills separated by ·" value={item.skills} onChange={e => upd(items.map((it,i)=>i===idx?{...it,skills:e.target.value}:it))} />
+          </div>
+        ))}
+        <button className="btn-ghost w-full text-xs" onClick={() => upd([...items,{id:mkid(),category:'',skills:''}])}>+ Add Skill Group</button>
+      </div>
+    )
+  }
+  if (section.type === 'languages') {
+    const items: any[] = section.data
+    return (
+      <div className="space-y-3">
+        {items.map((item, idx) => (
+          <div key={item.id} className="flex gap-2 items-center">
+            <input className="input" placeholder="Language" value={item.language} onChange={e => upd(items.map((it,i)=>i===idx?{...it,language:e.target.value}:it))} />
+            <input className="input" placeholder="Level" value={item.level} onChange={e => upd(items.map((it,i)=>i===idx?{...it,level:e.target.value}:it))} />
+            <button onClick={() => upd(items.filter((_,i)=>i!==idx))} style={{ background:'none',border:'none',cursor:'pointer',color:'#be123c',flexShrink:0 }}>✕</button>
+          </div>
+        ))}
+        <button className="btn-ghost w-full text-xs" onClick={() => upd([...items,{id:mkid(),language:'',level:''}])}>+ Add Language</button>
+      </div>
+    )
+  }
+  return <textarea className="input" rows={6} placeholder="Write content here..." value={section.data?.text||''} onChange={e => upd({...section.data,text:e.target.value})} />
+}
+
 function CVEditor({ cv, onSave }: { cv: CVData | null; onSave: (cv: CVData) => void }) {
-  const [form, setForm] = useState<CVData>(cv || {
-    full_name: 'Devanshi', contact_line: 'Dublin, Ireland | devanshi@email.com | LinkedIn',
-    summary: 'Trust & Safety AI Analyst with 3+ years in LLM evaluation, content safety, abuse detection, and product policy. MSc Business Analytics (Dublin Business School). CSPO certified. Experienced sole market owner across 4 markets. Immediately available.',
-    skills: 'LLM Evaluation · Trust & Safety · Content Policy · SQL · Python/Pandas · Data Visualisation · Stakeholder Management · Agile/CSPO · EU AI Act · Abuse Detection',
-    exp1_title: 'Trust & Safety AI Analyst', exp1_company: 'Meta (via Covalen Solutions)', exp1_dates: '2022 – 2025',
-    exp1_bullets: '- Sole market owner for regional content safety assessments across 4 markets\n- LLM evaluation, spam, malware, and ID verification abuse detection\n- Built data visualisation dashboards for policy reporting\n- Supported international markets with policy enforcement decisions',
-    exp2_title: 'Business Analyst', exp2_company: 'Sunrise Enterprise', exp2_dates: '2020 – 2022',
-    exp2_bullets: '- HRM software implementation and requirements gathering\n- Stakeholder workshops and process documentation',
-    education: 'MSc Business Analytics — Dublin Business School\nCSPO Certification — Scrum Alliance\nIIT Roorkee PM Certification (in progress)',
-  })
+  const [doc, setDoc]                 = useState<CVDoc>(DEFAULT_CV_DOC)
+  const [activeId, setActiveId]       = useState<string | null>('hdr')
+  const [tab, setTab]                 = useState<'edit'|'preview'>('edit')
   const [saving, setSaving]           = useState(false)
   const [saved, setSaved]             = useState(false)
-  const [layout, setLayout]           = useState('modern')
-  const [tab, setTab]                 = useState<'edit' | 'preview'>('edit')
-  const [downloading, setDownloading] = useState<string | null>(null)
+  const [downloading, setDownloading] = useState<string|null>(null)
+  const [dragOverId, setDragOverId]   = useState<string|null>(null)
+  const dragSrcId                     = useRef<string|null>(null)
   const previewRef                    = useRef<HTMLDivElement>(null)
 
-  useEffect(() => { if (cv) setForm(cv) }, [cv])
+  useEffect(() => {
+    try { const raw = (cv as any)?._json; if (raw) setDoc(JSON.parse(raw)) } catch {}
+  }, [cv])
+
+  const updSec = (s: CVSection) => setDoc(d => ({...d, sections: d.sections.map(x => x.id===s.id ? s : x)}))
+  const toggleVis = (id: string) => setDoc(d => ({...d, sections: d.sections.map(s => s.id===id ? {...s,visible:!s.visible} : s)}))
+  const removeSec = (id: string) => { setDoc(d => ({...d, sections: d.sections.filter(s=>s.id!==id)})); if(activeId===id) setActiveId(null) }
+  const renameSec = (id: string, title: string) => setDoc(d => ({...d, sections: d.sections.map(s => s.id===id ? {...s,title} : s)}))
+
+  function addSection(type: string) {
+    const label = CV_SECTION_TYPES.find(s=>s.type===type)?.label || 'Section'
+    const defaults: Record<string,any> = { summary:{text:''}, experience:[], projects:[], education:[], certifications:[], skills:[], languages:[], custom:{text:''} }
+    const ns: CVSection = { id: mkid(), type, title: label.toUpperCase(), visible: true, data: defaults[type]??{text:''} }
+    setDoc(d => ({...d, sections:[...d.sections, ns]}))
+    setActiveId(ns.id)
+  }
+
+  function onDragStart(id: string) { dragSrcId.current = id }
+  function onDragOverSec(e: React.DragEvent, id: string) { e.preventDefault(); setDragOverId(id) }
+  function onDropSec(targetId: string) {
+    const src = dragSrcId.current
+    if (!src || src===targetId) { setDragOverId(null); return }
+    setDoc(d => {
+      const secs = [...d.sections]
+      const si = secs.findIndex(s=>s.id===src), ti = secs.findIndex(s=>s.id===targetId)
+      const [moved] = secs.splice(si,1); secs.splice(ti,0,moved)
+      return {...d, sections: secs}
+    })
+    setDragOverId(null); dragSrcId.current = null
+  }
 
   async function save() {
     setSaving(true)
-    try { await db.saveCV(form); onSave(form); setSaved(true); setTimeout(() => setSaved(false), 2000) }
-    finally { setSaving(false) }
+    try {
+      const expSecs = doc.sections.find(s=>s.type==='experience')?.data||[]
+      const legacy: any = {
+        full_name: doc.sections.find(s=>s.type==='header')?.data.name||'',
+        contact_line: [doc.sections.find(s=>s.type==='header')?.data.email, doc.sections.find(s=>s.type==='header')?.data.phone].filter(Boolean).join(' | '),
+        summary: doc.sections.find(s=>s.type==='summary')?.data.text||'',
+        skills: doc.sections.find(s=>s.type==='skills')?.data.map((g:any)=>g.skills).join(' · ')||'',
+        exp1_title: expSecs[0]?.title||'', exp1_company: expSecs[0]?.company||'', exp1_dates: expSecs[0]?.dates||'', exp1_bullets: expSecs[0]?.bullets||'',
+        exp2_title: expSecs[1]?.title||'', exp2_company: expSecs[1]?.company||'', exp2_dates: expSecs[1]?.dates||'', exp2_bullets: expSecs[1]?.bullets||'',
+        education: doc.sections.find(s=>s.type==='education')?.data.map((e:any)=>e.degree+' — '+e.institution).join('\n')||'',
+        _json: JSON.stringify(doc),
+      }
+      await db.saveCV(legacy); onSave(legacy)
+      setSaved(true); setTimeout(()=>setSaved(false),2000)
+    } finally { setSaving(false) }
   }
 
-  async function downloadPDF() {
+  async function dlPDF() {
     setDownloading('pdf')
     try {
-      const { default: jsPDF }        = await import('jspdf')
-      const { default: html2canvas }  = await import('html2canvas')
-      const el = previewRef.current
-      if (!el) return
-      const canvas  = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
-      const imgData = canvas.toDataURL('image/png')
-      const pdf     = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-      const pageW   = pdf.internal.pageSize.getWidth()
-      const pageH   = pdf.internal.pageSize.getHeight()
-      const imgW    = pageW - 20
-      const imgH    = (canvas.height * imgW) / canvas.width
-      pdf.addImage(imgData, 'PNG', 10, 10, imgW, Math.min(imgH, pageH - 20))
-      pdf.save(`${form.full_name.replace(/\s+/g, '_')}_CV.pdf`)
-    } catch (e) { console.error(e) }
-    finally { setDownloading(null) }
+      const { default: jsPDF } = await import('jspdf')
+      const { default: html2canvas } = await import('html2canvas')
+      const el = previewRef.current; if (!el) return
+      const canvas = await html2canvas(el,{scale:2.5,useCORS:true,backgroundColor:'#ffffff'})
+      const pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'})
+      const pW=pdf.internal.pageSize.getWidth(), pH=pdf.internal.pageSize.getHeight()
+      const iW=pW-16, iH=(canvas.height*iW)/canvas.width
+      const name=doc.sections.find(s=>s.type==='header')?.data.name||'CV'
+      if (iH <= pH-16) {
+        pdf.addImage(canvas.toDataURL('image/png'),'PNG',8,8,iW,iH)
+      } else {
+        const rowH = (pH-16)*canvas.width/iW
+        let y=0, page=0
+        while (y < canvas.height) {
+          const h = Math.min(rowH, canvas.height-y)
+          const c2 = document.createElement('canvas'); c2.width=canvas.width; c2.height=h
+          c2.getContext('2d')!.drawImage(canvas,0,-y)
+          if (page>0) pdf.addPage()
+          pdf.addImage(c2.toDataURL('image/png'),'PNG',8,8,iW,(h*iW)/canvas.width)
+          y+=h; page++
+        }
+      }
+      pdf.save(name.replace(/\s+/g,'_')+'_CV.pdf')
+    } catch(e){console.error(e)} finally{setDownloading(null)}
   }
 
-  async function downloadDOCX() {
+  async function dlDOCX() {
     setDownloading('docx')
     try {
-      const { Document, Packer, Paragraph, TextRun, HeadingLevel, BorderStyle, AlignmentType } = await import('docx')
-      const bullets = (txt: string) => txt.split('\n').filter(Boolean).map(b =>
-        new Paragraph({ text: '• ' + b.replace(/^[-•]\s*/, ''), spacing: { after: 60 } })
-      )
-      const secHdr = (text: string) => new Paragraph({
-        children: [new TextRun({ text, bold: true, color: '1e3a5f', size: 24 })],
-        border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: '059669', space: 2 } },
-        spacing: { before: 240, after: 120 },
-      })
-      const doc = new Document({
-        sections: [{
-          properties: { page: { margin: { top: 720, bottom: 720, left: 900, right: 900 } } },
-          children: [
-            new Paragraph({ children: [new TextRun({ text: form.full_name, bold: true, size: 40, color: '1e3a5f' })], alignment: AlignmentType.CENTER }),
-            new Paragraph({ children: [new TextRun({ text: form.contact_line, size: 18, color: '475569' })], alignment: AlignmentType.CENTER, spacing: { after: 240 } }),
-            secHdr('Professional Summary'),
-            new Paragraph({ text: form.summary, spacing: { after: 200 } }),
-            secHdr('Key Skills'),
-            new Paragraph({ text: form.skills, spacing: { after: 200 } }),
-            secHdr('Professional Experience'),
-            new Paragraph({ children: [new TextRun({ text: `${form.exp1_title}  —  ${form.exp1_company}`, bold: true }), new TextRun({ text: `   ${form.exp1_dates}`, color: '059669' })], spacing: { after: 80 } }),
-            ...bullets(form.exp1_bullets),
-            new Paragraph({ spacing: { after: 120 } }),
-            new Paragraph({ children: [new TextRun({ text: `${form.exp2_title}  —  ${form.exp2_company}`, bold: true }), new TextRun({ text: `   ${form.exp2_dates}`, color: '059669' })], spacing: { after: 80 } }),
-            ...bullets(form.exp2_bullets),
-            secHdr('Education'),
-            ...form.education.split('\n').filter(Boolean).map(l => new Paragraph({ text: l, spacing: { after: 80 } })),
-          ],
-        }],
-      })
-      const blob = await Packer.toBlob(doc)
-      const url  = URL.createObjectURL(blob)
-      const a    = document.createElement('a')
-      a.href = url; a.download = `${form.full_name.replace(/\s+/g, '_')}_CV.docx`
-      a.click(); URL.revokeObjectURL(url)
-    } catch (e) { console.error(e) }
-    finally { setDownloading(null) }
+      const { Document, Packer, Paragraph, TextRun, BorderStyle, AlignmentType } = await import('docx')
+      const hdr = doc.sections.find(s=>s.type==='header')?.data||{}
+      const name = hdr.name||'CV'
+      const contact = [hdr.location,hdr.email,hdr.phone,hdr.linkedin,hdr.github].filter(Boolean).join('  |  ')
+      const ps: any[] = [
+        new Paragraph({children:[new TextRun({text:name,bold:true,size:44,color:'1e3a5f'})],alignment:AlignmentType.CENTER}),
+        new Paragraph({children:[new TextRun({text:contact,size:18,color:'475569'})],alignment:AlignmentType.CENTER,spacing:{after:240}}),
+      ]
+      const sh = (t:string) => new Paragraph({children:[new TextRun({text:t.toUpperCase(),bold:true,size:22,color:'1e3a5f'})],border:{bottom:{style:BorderStyle.SINGLE,size:6,color:'cbd5e1',space:2}},spacing:{before:240,after:120}})
+      for (const sec of doc.sections.filter(s=>s.visible&&s.type!=='header')) {
+        ps.push(sh(sec.title))
+        if (sec.type==='summary') ps.push(new Paragraph({text:sec.data.text,spacing:{after:120}}))
+        if (sec.type==='experience') for (const e of sec.data) {
+          ps.push(new Paragraph({children:[new TextRun({text:e.title,bold:true,size:24})],spacing:{after:40}}))
+          ps.push(new Paragraph({children:[new TextRun({text:e.company,bold:true,size:22,color:'1e3a5f'}),new TextRun({text:'   '+e.dates+(e.location?' · '+e.location:''),size:20,color:'64748b'})],spacing:{after:60}}))
+          for (const b of e.bullets.split('\n').filter(Boolean)) ps.push(new Paragraph({text:b.startsWith('•')?b:'• '+b.replace(/^-\s*/,''),spacing:{after:40}}))
+          ps.push(new Paragraph({spacing:{after:80}}))
+        }
+        if (sec.type==='projects') for (const p of sec.data) {
+          ps.push(new Paragraph({children:[new TextRun({text:p.title,bold:true,size:22})],spacing:{after:40}}))
+          if (p.url) ps.push(new Paragraph({children:[new TextRun({text:p.url,size:20,color:'2563eb'})],spacing:{after:40}}))
+          ps.push(new Paragraph({text:'• '+p.description,spacing:{after:80}}))
+        }
+        if (sec.type==='education') for (const e of sec.data) {
+          ps.push(new Paragraph({children:[new TextRun({text:e.degree,bold:true,size:22})],spacing:{after:40}}))
+          ps.push(new Paragraph({text:[e.institution,e.location,e.dates].filter(Boolean).join(' · '),spacing:{after:80}}))
+        }
+        if (sec.type==='certifications') for (const c of sec.data) {
+          ps.push(new Paragraph({children:[new TextRun({text:c.name,bold:true,size:22})],spacing:{after:40}}))
+          ps.push(new Paragraph({text:c.issuer,spacing:{after:80}}))
+        }
+        if (sec.type==='skills') for (const g of sec.data) {
+          ps.push(new Paragraph({children:[new TextRun({text:g.category+'  ',bold:true,size:22}),new TextRun({text:g.skills,size:22})],spacing:{after:60}}))
+        }
+        if (sec.type==='languages') for (const l of sec.data) ps.push(new Paragraph({text:l.language+' — '+l.level,spacing:{after:40}}))
+        if (sec.type==='custom') ps.push(new Paragraph({text:sec.data?.text||'',spacing:{after:120}}))
+      }
+      const blob = await Packer.toBlob(new Document({sections:[{properties:{page:{margin:{top:720,bottom:720,left:900,right:900}}},children:ps}]}))
+      const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=name.replace(/\s+/g,'_')+'_CV.docx'; a.click(); URL.revokeObjectURL(url)
+    } catch(e){console.error(e)} finally{setDownloading(null)}
   }
 
-  function f(key: keyof CVData) {
-    return { value: form[key], onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm({ ...form, [key]: e.target.value }) }
-  }
+  const activeSec = doc.sections.find(s=>s.id===activeId)
 
   return (
     <div className="animate-fade-in">
-      {/* Header */}
+      {/* Top bar */}
       <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
         <div>
           <h1 className="section-header">CV Editor</h1>
-          <p className="text-sm" style={{ color: '#64748b' }}>Edit · choose a layout · download PDF or Word</p>
+          <p className="text-sm" style={{ color: '#64748b' }}>Drag ⠿ to reorder sections · click to edit · ATS-friendly</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <button onClick={downloadPDF} disabled={!!downloading}
-            className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
-            style={{ background: 'linear-gradient(135deg,#1e40af,#3b82f6)' }}>
-            {downloading === 'pdf' ? <RefreshCw size={11} className="animate-spin" /> : <FileText size={11} />}
-            Download PDF
+          <button onClick={save} disabled={saving} className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1.5">
+            {saved ? <><CheckCircle size={11}/>Saved!</> : saving ? <><RefreshCw size={11} className="animate-spin"/>Saving...</> : <><CheckCircle size={11}/>Save</>}
           </button>
-          <button onClick={downloadDOCX} disabled={!!downloading}
-            className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
-            style={{ background: 'linear-gradient(135deg,#db2777,#f472b6)' }}>
-            {downloading === 'docx' ? <RefreshCw size={11} className="animate-spin" /> : <FileText size={11} />}
-            Download Word
+          <button onClick={dlPDF} disabled={!!downloading} className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5" style={{background:'linear-gradient(135deg,#1e40af,#3b82f6)'}}>
+            {downloading==='pdf'?<RefreshCw size={11} className="animate-spin"/>:<FileText size={11}/>} PDF
+          </button>
+          <button onClick={dlDOCX} disabled={!!downloading} className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5" style={{background:'linear-gradient(135deg,#db2777,#f472b6)'}}>
+            {downloading==='docx'?<RefreshCw size={11} className="animate-spin"/>:<FileText size={11}/>} Word
           </button>
         </div>
       </div>
 
-      {/* Layout picker */}
+      {/* Font picker */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">
-        <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#064e3b' }}>Layout:</span>
-        {CV_LAYOUTS.map(l => (
-          <button key={l.id} onClick={() => setLayout(l.id)}
-            className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
-            style={{
-              background: layout === l.id ? 'linear-gradient(135deg,#059669,#10b981)' : '#ffffff',
-              color: layout === l.id ? 'white' : '#059669',
-              border: `1.5px solid ${layout === l.id ? 'transparent' : '#a7f3d0'}`,
-              cursor: 'pointer',
-              boxShadow: layout === l.id ? '0 3px 10px rgba(5,150,105,0.25)' : 'none',
-            }}>
-            {l.label}
-            <span className="ml-1 opacity-70 font-normal">· {l.desc}</span>
+        <span className="text-xs font-bold uppercase tracking-wider flex-shrink-0" style={{color:'#064e3b'}}>Font:</span>
+        {CV_FONTS.map(f => (
+          <button key={f.id} onClick={()=>setDoc(d=>({...d,font:f.id}))}
+            className="px-3 py-1 rounded-lg text-xs font-medium transition-all"
+            style={{background:doc.font===f.id?'#059669':'#fff',color:doc.font===f.id?'white':'#475569',border:`1.5px solid ${doc.font===f.id?'#059669':'#d1fae5'}`,cursor:'pointer',fontFamily:f.id}}>
+            {f.label}
           </button>
         ))}
       </div>
 
       {/* Mobile tabs */}
       <div className="flex gap-2 mb-4 md:hidden">
-        {(['edit', 'preview'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className="flex-1 py-2 rounded-xl text-xs font-semibold capitalize transition-all"
-            style={{ background: tab === t ? 'linear-gradient(135deg,#059669,#10b981)' : '#ffffff', color: tab === t ? 'white' : '#059669', border: `1.5px solid ${tab === t ? 'transparent' : '#a7f3d0'}`, cursor: 'pointer' }}>
+        {(['edit','preview'] as const).map(t=>(
+          <button key={t} onClick={()=>setTab(t)} className="flex-1 py-2 rounded-xl text-xs font-semibold capitalize"
+            style={{background:tab===t?'linear-gradient(135deg,#059669,#10b981)':'#fff',color:tab===t?'white':'#059669',border:`1.5px solid ${tab===t?'transparent':'#a7f3d0'}`,cursor:'pointer'}}>
             {t}
           </button>
         ))}
       </div>
 
       <div className="cv-grid">
-        {/* Edit panel */}
-        <div className={tab === 'preview' ? 'hidden md:block' : 'block'}>
-          <div className="space-y-3">
-            <input className="input" placeholder="Full name" {...f('full_name')} />
-            <input className="input" placeholder="Contact line (email | phone | LinkedIn | location)" {...f('contact_line')} />
-            <textarea className="input" placeholder="Professional summary" rows={4} {...f('summary')} />
-            <textarea className="input" placeholder="Skills (comma or · separated)" rows={3} {...f('skills')} />
-            <div className="rounded-xl p-3 space-y-2" style={{ background: '#ecfdf5', border: '1px solid #a7f3d0' }}>
-              <div className="text-xs font-bold uppercase tracking-wider" style={{ color: '#064e3b' }}>Experience 1</div>
-              <input className="input" placeholder="Job title" {...f('exp1_title')} />
-              <input className="input" placeholder="Company" {...f('exp1_company')} />
-              <input className="input" placeholder="Dates (e.g. 2022 – 2025)" {...f('exp1_dates')} />
-              <textarea className="input" placeholder="Achievements (one per line, start with -)" rows={4} {...f('exp1_bullets')} />
+        {/* Left: section manager + editor */}
+        <div className={tab==='preview'?'hidden md:block':'block'}>
+
+          {/* Section list */}
+          <div className="rounded-xl mb-3" style={{border:'1px solid #d1fae5',overflow:'hidden'}}>
+            <div className="px-3 py-2" style={{background:'#ecfdf5',borderBottom:'1px solid #d1fae5'}}>
+              <span className="text-xs font-bold uppercase tracking-wider" style={{color:'#064e3b'}}>Sections — drag ⠿ to reorder</span>
             </div>
-            <div className="rounded-xl p-3 space-y-2" style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
-              <div className="text-xs font-bold uppercase tracking-wider" style={{ color: '#1e40af' }}>Experience 2</div>
-              <input className="input" placeholder="Job title" {...f('exp2_title')} />
-              <input className="input" placeholder="Company" {...f('exp2_company')} />
-              <input className="input" placeholder="Dates" {...f('exp2_dates')} />
-              <textarea className="input" placeholder="Achievements" rows={3} {...f('exp2_bullets')} />
-            </div>
-            <textarea className="input" placeholder="Education (one line per qualification)" rows={3} {...f('education')} />
-            <button className="btn-primary w-full flex items-center justify-center gap-2" onClick={save} disabled={saving}>
-              {saved ? <><CheckCircle size={14} />Saved!</> : saving ? <><RefreshCw size={13} className="animate-spin" />Saving...</> : 'Save CV to Supabase'}
-            </button>
+            {doc.sections.map(s=>(
+              <div key={s.id} draggable
+                onDragStart={()=>onDragStart(s.id)}
+                onDragOver={e=>onDragOverSec(e,s.id)}
+                onDrop={()=>onDropSec(s.id)}
+                onClick={()=>setActiveId(activeId===s.id?null:s.id)}
+                style={{display:'flex',alignItems:'center',gap:'8px',padding:'7px 12px',cursor:'pointer',background:activeId===s.id?'#ecfdf5':dragOverId===s.id?'#f0fdf4':'#fff',borderBottom:'1px solid #f1f5f9',transition:'background 0.15s'}}>
+                <span style={{color:'#9ca3af',cursor:'grab',fontSize:'15px',userSelect:'none'}}>⠿</span>
+                <span className="flex-1 text-xs font-semibold" style={{color:s.visible?'#1e3a5f':'#9ca3af'}}>{s.title}</span>
+                <button onClick={e=>{e.stopPropagation();const t=window.prompt('Rename section:',s.title);if(t)renameSec(s.id,t)}}
+                  style={{background:'none',border:'none',cursor:'pointer',fontSize:'12px',color:'#94a3b8',padding:'0 2px'}} title="Rename">✏️</button>
+                <button onClick={e=>{e.stopPropagation();toggleVis(s.id)}}
+                  style={{background:'none',border:'none',cursor:'pointer',fontSize:'13px',color:s.visible?'#059669':'#9ca3af'}} title={s.visible?'Hide':'Show'}>
+                  {s.visible?'👁':'🙈'}
+                </button>
+                {s.type!=='header'&&(
+                  <button onClick={e=>{e.stopPropagation();if(window.confirm('Remove "'+s.title+'"?'))removeSec(s.id)}}
+                    style={{background:'none',border:'none',cursor:'pointer',fontSize:'12px',color:'#fca5a5'}} title="Remove">✕</button>
+                )}
+              </div>
+            ))}
           </div>
+
+          {/* Add section */}
+          <div className="mb-4">
+            <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{color:'#064e3b'}}>Add section</p>
+            <div className="flex flex-wrap gap-1.5">
+              {CV_SECTION_TYPES.map(t=>(
+                <button key={t.type} onClick={()=>addSection(t.type)}
+                  className="px-2.5 py-1 rounded-lg text-xs font-medium"
+                  style={{background:'#fff',color:'#059669',border:'1.5px solid #a7f3d0',cursor:'pointer'}}>
+                  + {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Active section editor */}
+          {activeSec && (
+            <div className="rounded-xl" style={{border:'1.5px solid #059669',overflow:'hidden'}}>
+              <div className="px-3 py-2 flex items-center justify-between" style={{background:'linear-gradient(135deg,#059669,#10b981)'}}>
+                <span className="text-xs font-bold text-white uppercase tracking-wider">Editing: {activeSec.title}</span>
+                <button onClick={()=>setActiveId(null)} style={{background:'none',border:'none',color:'white',cursor:'pointer',fontSize:'15px'}}>✕</button>
+              </div>
+              <div className="p-3 space-y-2">
+                {activeSec.type!=='header'&&(
+                  <input className="input" placeholder="Section heading" value={activeSec.title}
+                    onChange={e=>renameSec(activeSec.id,e.target.value)} />
+                )}
+                <SectionEditForm section={activeSec} onChange={updSec} />
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Preview panel */}
-        <div className={tab === 'edit' ? 'hidden md:block' : 'block'}>
-          <div ref={previewRef} id="cv-print-target"
-            className="rounded-2xl p-7"
-            style={{ background: 'white', border: '1.5px solid #d1fae5', minHeight: '500px', boxShadow: '0 4px 24px rgba(5,150,105,0.08)' }}>
-            <CVPreview form={form} layout={layout} />
+        {/* Right: live preview */}
+        <div className={tab==='edit'?'hidden md:block':'block'}>
+          <div ref={previewRef} id="cv-print-target" className="rounded-2xl p-8"
+            style={{background:'white',border:'1px solid #e2e8f0',minHeight:'600px',boxShadow:'0 4px 24px rgba(0,0,0,0.06)'}}>
+            <CVPreviewATS doc={doc} />
           </div>
-          <p className="text-xs mt-2 text-center" style={{ color: '#94a3b8' }}>
-            Preview updates as you type · use Download buttons to save
-          </p>
+          <p className="text-xs mt-2 text-center" style={{color:'#94a3b8'}}>ATS-friendly layout · updates live as you type</p>
         </div>
       </div>
     </div>
