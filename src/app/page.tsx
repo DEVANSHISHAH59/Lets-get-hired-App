@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import { useLiveJobs, useLiveNews } from '@/hooks/useLiveData'
 import { supabase, db, Application, CVData } from '@/lib/supabase'
 import { JOBS, COMPANIES, PORTALS, AGENCIES, QUOTES, TIPS, SV_NEWS } from '@/lib/data'
 import {
@@ -23,9 +24,9 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
   Offer:<Award size={12}/>, Rejected:<XCircle size={12}/>, Ghosted:<AlertCircle size={12}/>,
 }
 const CAT_COLORS: Record<string, string> = {
-  'Big Tech':'#4c1d95','AI':'#1e3a5f','Fintech':'#064e3b','SaaS':'#78350f',
-  'Security':'#7f1d1d','Platforms':'#1f2937','Consulting':'#374151',
-  'Finance':'#1e3a5f','Startup':'#713f12',
+  'Big Tech':'#064e3b','AI':'#0e2a4a','Fintech':'#1a3a5c','SaaS':'#3b2800',
+  'Security':'#3a1a1a','Platforms':'#1a2535','Consulting':'#1a3040',
+  'Finance':'#0e2a4a','Startup':'#3b2800',
 }
 
 function roleChip(role: string) {
@@ -91,33 +92,36 @@ export default function App() {
     rate:       apps.length ? Math.round(apps.filter(a=>['Interviewing','Offer'].includes(a.status)).length/apps.length*100) : 0,
   }
 
+  const { jobs: liveJobs, loading: jobsLoading, lastUpdated: jobsUpdated } = useLiveJobs()
+  const { news: liveNews, loading: newsLoading, lastUpdated: newsUpdated } = useLiveNews()
+
   return (
-    <div className="flex min-h-screen" style={{background:'#0F0A1E'}}>
+    <div className="flex min-h-screen" style={{background:'#0a1628'}}>
 
       {/* SIDEBAR */}
       <aside className={`flex-shrink-0 transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-16'}`}
-        style={{background:'linear-gradient(180deg,#1a0533 0%,#0f0a1e 100%)',borderRight:'1px solid #2d1063',position:'sticky',top:0,height:'100vh',overflowY:'auto'}}>
+        style={{background:'linear-gradient(180deg,#0d1f35 0%,#0a1628 100%)',borderRight:'1px solid #3d1a2e',position:'sticky',top:0,height:'100vh',overflowY:'auto'}}>
 
         <div className="p-4">
           {/* Logo */}
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold flex-shrink-0"
-              style={{background:'linear-gradient(135deg,#534AB7,#7c3aed)',color:'white'}}>LGH</div>
+              style={{background:'linear-gradient(135deg,#10b981,#0ea5e9)',color:'white'}}>LGH</div>
             {sidebarOpen && (
               <div>
-                <div className="font-semibold text-sm" style={{fontFamily:'Sora,sans-serif',color:'#e8d5ff'}}>Let's Get Hired</div>
-                <div className="text-xs" style={{color:'#7c3aed'}}>Devanshi . Dublin</div>
+                <div className="font-semibold text-sm" style={{fontFamily:'Sora,sans-serif',color:'#e8f4f0'}}>Let's Get Hired</div>
+                <div className="text-xs" style={{color:'#10b981'}}>Devanshi . Dublin</div>
               </div>
             )}
-            <button onClick={()=>setSidebar(!sidebarOpen)} className="ml-auto text-xs" style={{color:'#4c1d95',background:'none',border:'none',cursor:'pointer'}}>
+            <button onClick={()=>setSidebar(!sidebarOpen)} className="ml-auto text-xs" style={{color:'#10b981',background:'none',border:'none',cursor:'pointer'}}>
               {sidebarOpen ? '<' : '>'}
             </button>
           </div>
 
           {/* Quote */}
           {sidebarOpen && (
-            <div className="mb-4 p-3 rounded-xl text-xs italic leading-relaxed" style={{background:'#2d1063',borderLeft:'3px solid #a78bfa',color:'#ddd6fe'}}>
-              "{quote.text}"<div className="mt-1 not-italic" style={{color:'#7c3aed'}}>- {quote.author}</div>
+            <div className="mb-4 p-3 rounded-xl text-xs italic leading-relaxed" style={{background:'#1a3a5c',borderLeft:'3px solid #6ee7b7',color:'#e8f4f0'}}>
+              "{quote.text}"<div className="mt-1 not-italic" style={{color:'#10b981'}}>- {quote.author}</div>
             </div>
           )}
 
@@ -125,9 +129,9 @@ export default function App() {
           {sidebarOpen && (
             <div className="grid grid-cols-2 gap-2 mb-4">
               {[['Tracked',stats.total],['Applied',stats.applied],['Interviews',stats.interviews],['Offers',stats.offers]].map(([l,v])=>(
-                <div key={l} className="p-2 rounded-lg text-center" style={{background:'#1a0533',border:'1px solid #2d1063'}}>
-                  <div className="text-lg font-semibold" style={{fontFamily:'Sora',color:'#a78bfa'}}>{v}</div>
-                  <div className="text-xs" style={{color:'#7c3aed'}}>{l}</div>
+                <div key={l} className="p-2 rounded-lg text-center" style={{background:'#0d1f35',border:'1px solid #1a3a5c'}}>
+                  <div className="text-lg font-semibold" style={{fontFamily:'Sora',color:'#6ee7b7'}}>{v}</div>
+                  <div className="text-xs" style={{color:'#10b981'}}>{l}</div>
                 </div>
               ))}
             </div>
@@ -139,8 +143,8 @@ export default function App() {
               <button key={n.id} onClick={()=>setPage(n.id)}
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all"
                 style={{
-                  background: page===n.id ? 'linear-gradient(135deg,#534AB7,#4c1d95)' : 'transparent',
-                  color: page===n.id ? 'white' : '#c4b5fd',
+                  background: page===n.id ? 'linear-gradient(135deg,#10b981,#059669)' : 'transparent',
+                  color: page===n.id ? 'white' : '#a7f3d0',
                   border: 'none', cursor: 'pointer', fontFamily:'DM Sans',
                   textAlign: 'left',
                 }}>
@@ -154,7 +158,7 @@ export default function App() {
           {/* Quick links */}
           {sidebarOpen && (
             <div className="mt-6">
-              <div className="text-xs font-semibold mb-2 px-1" style={{color:'#4c1d95',textTransform:'uppercase',letterSpacing:'0.5px'}}>Quick links</div>
+              <div className="text-xs font-semibold mb-2 px-1" style={{color:'#10b981',textTransform:'uppercase',letterSpacing:'0.5px'}}>Quick links</div>
               {[
                 ['Silicon Republic','https://www.siliconrepublic.com'],
                 ['LinkedIn Jobs','https://www.linkedin.com/jobs/search/?keywords=trust+safety+analyst&location=Dublin'],
@@ -164,8 +168,8 @@ export default function App() {
                 ['CPL Recruitment','https://www.cpl.com/jobs'],
               ].map(([l,u])=>(
                 <a key={l} href={u} target="_blank" rel="noreferrer"
-                  className="flex items-center gap-2 px-2 py-1 rounded text-xs hover:bg-purple-900/30 transition-colors"
-                  style={{color:'#9ca3af',textDecoration:'none'}}>
+                  className="flex items-center gap-2 px-2 py-1 rounded text-xs hover:bg-emerald-900/30 transition-colors"
+                  style={{color:'#94a3b8',textDecoration:'none'}}>
                   <ExternalLink size={10}/>{l}
                 </a>
               ))}
@@ -179,16 +183,16 @@ export default function App() {
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <RefreshCw size={32} className="mx-auto mb-3 animate-spin" style={{color:'#534AB7'}}/>
-              <p style={{color:'#a78bfa'}}>Loading your job hunt HQ...</p>
+              <RefreshCw size={32} className="mx-auto mb-3 animate-spin" style={{color:'#10b981'}}/>
+              <p style={{color:'#6ee7b7'}}>Loading your job hunt HQ...</p>
             </div>
           </div>
         ) : (
           <>
             {page==='dashboard'  && <Dashboard stats={stats} apps={apps} tip={tip}/>}
-            {page==='jobs'       && <LiveJobs apps={apps} onTrack={refreshApps}/>}
+            {page==='jobs'       && <LiveJobs apps={apps} onTrack={refreshApps} liveJobs={liveJobs} jobsLoading={jobsLoading} jobsUpdated={jobsUpdated}/>}
             {page==='silicon'    && <SiliconRepublic/>}
-            {page==='svnews'     && <SVNews/>}
+            {page==='svnews'     && <SVNews news={liveNews} loading={newsLoading} lastUpdated={newsUpdated}/>}
             {page==='companies'  && <Companies/>}
             {page==='portals'    && <Portals/>}
             {page==='agencies'   && <Agencies/>}
@@ -215,30 +219,30 @@ function Dashboard({ stats, apps, tip }: { stats: any, apps: Application[], tip:
     <div className="animate-fade-in">
       {/* Hero */}
       <div className="rounded-2xl p-6 mb-6 relative overflow-hidden"
-        style={{background:'linear-gradient(135deg,#4c1d95 0%,#534AB7 50%,#7c3aed 100%)'}}>
+        style={{background:'linear-gradient(135deg,#0a4a30 0%,#0e2a4a 50%,#1a4a2a 100%)'}}>
         <h1 className="text-2xl font-bold text-white mb-1" style={{fontFamily:'Sora'}}>Let's Get Hired  </h1>
         <p className="text-sm opacity-80 text-white">Dublin job hunt command centre . Trust & Safety . AI Analyst . Data Analyst . Product Owner . Business Analyst</p>
         <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full opacity-10" style={{background:'white'}}/>
       </div>
 
       {/* Tip */}
-      <div className="rounded-xl p-4 mb-6" style={{background:'#1e3a5f',border:'1px solid #1d4ed8'}}>
-        <div className="text-xs font-semibold mb-1" style={{color:'#93c5fd',textTransform:'uppercase',letterSpacing:'0.5px'}}>  Tip of the day</div>
-        <div className="text-sm" style={{color:'#dbeafe'}}>{tip}</div>
+      <div className="rounded-xl p-4 mb-6" style={{background:'#0e2a4a',border:'1px solid #10b981'}}>
+        <div className="text-xs font-semibold mb-1" style={{color:'#fde68a',textTransform:'uppercase',letterSpacing:'0.5px'}}>  Tip of the day</div>
+        <div className="text-sm" style={{color:'#ecfdf5'}}>{tip}</div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-5 gap-3 mb-6">
         {[
-          {l:'Tracked',  v:stats.total,      color:'#a78bfa'},
-          {l:'Applied',  v:stats.applied,    color:'#93c5fd'},
+          {l:'Tracked',  v:stats.total,      color:'#6ee7b7'},
+          {l:'Applied',  v:stats.applied,    color:'#fde68a'},
           {l:'Interviews',v:stats.interviews,color:'#fde68a'},
           {l:'Offers',   v:stats.offers,     color:'#6ee7b7'},
-          {l:'Response', v:`${stats.rate}%`, color:'#f9a8d4'},
+          {l:'Response', v:`${stats.rate}%`, color:'#6ee7b7'},
         ].map(s=>(
-          <div key={s.l} className="rounded-xl p-4 text-center" style={{background:'#1a0533',border:'1px solid #2d1063'}}>
+          <div key={s.l} className="rounded-xl p-4 text-center" style={{background:'#0d1f35',border:'1px solid #1a3a5c'}}>
             <div className="text-2xl font-semibold" style={{fontFamily:'Sora',color:s.color}}>{s.v}</div>
-            <div className="text-xs mt-1" style={{color:'#7c3aed'}}>{s.l}</div>
+            <div className="text-xs mt-1" style={{color:'#10b981'}}>{s.l}</div>
           </div>
         ))}
       </div>
@@ -246,7 +250,7 @@ function Dashboard({ stats, apps, tip }: { stats: any, apps: Application[], tip:
       <div className="grid grid-cols-2 gap-6">
         {/* Hot jobs */}
         <div>
-          <h2 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{color:'#e8d5ff'}}>
+          <h2 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{color:'#e8f4f0'}}>
             <Zap size={14} style={{color:'#fde68a'}}/>Hot jobs right now
           </h2>
           <div className="space-y-2">
@@ -254,8 +258,8 @@ function Dashboard({ stats, apps, tip }: { stats: any, apps: Application[], tip:
               <div key={i} className="card p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate" style={{color:'#e8d5ff'}}>{j.title}</div>
-                    <div className="text-xs mt-1" style={{color:'#a78bfa'}}>{j.company} <span className="badge-sal">{j.salary}</span></div>
+                    <div className="text-sm font-medium truncate" style={{color:'#e8f4f0'}}>{j.title}</div>
+                    <div className="text-xs mt-1" style={{color:'#6ee7b7'}}>{j.company} <span className="badge-sal">{j.salary}</span></div>
                     <div className="text-xs mt-1" style={{color:'#6ee7b7'}}>{j.posted}</div>
                   </div>
                   <a href={j.url} target="_blank" rel="noreferrer"
@@ -270,7 +274,7 @@ function Dashboard({ stats, apps, tip }: { stats: any, apps: Application[], tip:
 
         {/* Quick links + recent */}
         <div>
-          <h2 className="text-sm font-semibold mb-3" style={{color:'#e8d5ff'}}>  Search now</h2>
+          <h2 className="text-sm font-semibold mb-3" style={{color:'#e8f4f0'}}>  Search now</h2>
           <div className="space-y-1 mb-5">
             {[
               ['LinkedIn - T&S Dublin today','https://www.linkedin.com/jobs/search/?keywords=trust+safety+analyst&location=Dublin&f_TPR=r86400'],
@@ -283,22 +287,22 @@ function Dashboard({ stats, apps, tip }: { stats: any, apps: Application[], tip:
               ['CPL - Analyst Dublin','https://www.cpl.com/jobs?searchType=keyword&keyword=analyst&location=Dublin'],
             ].map(([l,u])=>(
               <a key={l} href={u} target="_blank" rel="noreferrer"
-                className="flex items-center gap-2 text-xs py-1 px-2 rounded-lg hover:bg-purple-900/20 transition-colors"
-                style={{color:'#c4b5fd',textDecoration:'none'}}>
-                <ExternalLink size={10} style={{color:'#534AB7',flexShrink:0}}/>{l}
+                className="flex items-center gap-2 text-xs py-1 px-2 rounded-lg hover:bg-emerald-900/20 transition-colors"
+                style={{color:'#e8f4f0',textDecoration:'none'}}>
+                <ExternalLink size={10} style={{color:'#10b981',flexShrink:0}}/>{l}
               </a>
             ))}
           </div>
 
           {recent.length > 0 && (
             <>
-              <h2 className="text-sm font-semibold mb-3" style={{color:'#e8d5ff'}}>  Recent applications</h2>
+              <h2 className="text-sm font-semibold mb-3" style={{color:'#e8f4f0'}}>  Recent applications</h2>
               <div className="space-y-2">
                 {recent.map(a=>(
                   <div key={a.id} className="card p-3 flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <div className="text-xs font-medium truncate" style={{color:'#e8d5ff'}}>{a.title}</div>
-                      <div className="text-xs" style={{color:'#7c3aed'}}>{a.company} . {a.date_applied}</div>
+                      <div className="text-xs font-medium truncate" style={{color:'#e8f4f0'}}>{a.title}</div>
+                      <div className="text-xs" style={{color:'#10b981'}}>{a.company} . {a.date_applied}</div>
                     </div>
                     {statusChip(a.status)}
                   </div>
@@ -315,7 +319,10 @@ function Dashboard({ stats, apps, tip }: { stats: any, apps: Application[], tip:
 // ============================================================================
 // LIVE JOBS
 // ============================================================================
-function LiveJobs({ apps, onTrack }: { apps: Application[], onTrack: () => void }) {
+function LiveJobs({ apps, onTrack, liveJobs, jobsLoading, jobsUpdated }: { 
+  apps: Application[], onTrack: () => void,
+  liveJobs: any[] | null, jobsLoading: boolean, jobsUpdated: string | null
+}) {
   const [roleF, setRoleF] = useState('All')
   const [sortF, setSortF] = useState('newest')
   const [search, setSearch] = useState('')
@@ -345,8 +352,53 @@ function LiveJobs({ apps, onTrack }: { apps: Application[], onTrack: () => void 
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8d5ff'}}>Live Job Listings - Dublin 2026</h1>
-      <p className="text-sm mb-4" style={{color:'#7c3aed'}}>Real roles from company career pages. HOT = posted this week.</p>
+      <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8f4f0'}}>Live Job Listings - Dublin 2026</h1>
+      <p className="text-sm mb-2" style={{color:'#10b981'}}>Real roles from company career pages. HOT = posted this week.</p>
+
+      {/* LIVE INTERNET JOBS */}
+      {(liveJobs && liveJobs.length > 0) && (
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-2 h-2 rounded-full animate-pulse" style={{background:'#10b981'}}/>
+            <span className="text-xs font-semibold uppercase tracking-wider" style={{color:'#6ee7b7'}}>
+              Live from internet - {liveJobs.length} jobs found
+            </span>
+            {jobsUpdated && <span className="text-xs ml-auto" style={{color:'#4a6a7a'}}>
+              Updated {new Date(jobsUpdated).toLocaleTimeString('en-IE', {hour:'2-digit',minute:'2-digit'})}
+            </span>}
+          </div>
+          <div className="space-y-2">
+            {liveJobs.map((j: any, i: number) => (
+              <div key={i} className="card p-4" style={{borderColor:'#10b981'}}>
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-medium" style={{color:'#e8f4f0'}}>{j.title}</span>
+                      <span style={{background:'#10b981',color:'white',padding:'1px 7px',borderRadius:'8px',fontSize:'10px',fontWeight:'700'}}>LIVE</span>
+                    </div>
+                    <div className="text-xs mb-1" style={{color:'#6ee7b7'}}>{j.company} - {j.location}</div>
+                    <div className="text-xs mb-1" style={{color:'#fde68a'}}>{j.salary}</div>
+                    <p className="text-xs" style={{color:'#94a3b8'}}>{j.desc}</p>
+                    <div className="text-xs mt-1" style={{color:'#4a6a7a'}}>via {j.source} - {j.posted}</div>
+                  </div>
+                  <a href={j.url} target="_blank" rel="noreferrer" className="btn-ghost text-xs py-1 px-3 flex items-center gap-1 flex-shrink-0">
+                    <ExternalLink size={10}/>Apply
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="my-4 border-t" style={{borderColor:'#1a3a5c'}}/>
+          <p className="text-xs mb-3" style={{color:'#4a6a7a'}}>Curated roles below (always up to date)</p>
+        </div>
+      )}
+
+      {jobsLoading && (
+        <div className="flex items-center gap-2 mb-4 p-3 rounded-xl" style={{background:'#0d1f35',border:'1px solid #1a3a5c'}}>
+          <div className="w-2 h-2 rounded-full animate-pulse" style={{background:'#10b981'}}/>
+          <span className="text-xs" style={{color:'#6ee7b7'}}>Fetching live jobs from LinkedIn, Indeed, Glassdoor...</span>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-3 mb-4">
         <input className="input flex-1 min-w-48" placeholder="Search jobs or companies..." value={search} onChange={e=>setSearch(e.target.value)}/>
@@ -370,16 +422,16 @@ function LiveJobs({ apps, onTrack }: { apps: Application[], onTrack: () => void 
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="text-sm font-medium" style={{color:'#e8d5ff'}}>{j.title}</span>
+                    <span className="text-sm font-medium" style={{color:'#e8f4f0'}}>{j.title}</span>
                     {ageBadge(j.age)}
                   </div>
-                  <div className="text-xs mb-2" style={{color:'#a78bfa'}}>
+                  <div className="text-xs mb-2" style={{color:'#6ee7b7'}}>
                     {j.company} . Dublin . via {j.source}
                     <span className="badge-sal ml-2">{j.salary}</span>
                   </div>
-                  <p className="text-xs" style={{color:'#9ca3af'}}>{j.desc}</p>
+                  <p className="text-xs" style={{color:'#94a3b8'}}>{j.desc}</p>
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <span className="text-xs" style={{color:j.age<=7?'#6ee7b7':'#7c3aed'}}>{j.posted}</span>
+                    <span className="text-xs" style={{color:j.age<=7?'#6ee7b7':'#0ea5e9'}}>{j.posted}</span>
                     {roleChip(j.role)}
                   </div>
                 </div>
@@ -428,27 +480,27 @@ function SiliconRepublic() {
   const [tab, setTab] = useState<'jobs'|'news'|'links'>('jobs')
   return (
     <div className="animate-fade-in">
-      <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8d5ff'}}>Silicon Republic</h1>
-      <p className="text-sm mb-4" style={{color:'#7c3aed'}}>Irish tech news and Dublin jobs - your daily pulse.</p>
+      <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8f4f0'}}>Silicon Republic</h1>
+      <p className="text-sm mb-4" style={{color:'#10b981'}}>Irish tech news and Dublin jobs - your daily pulse.</p>
       <div className="flex gap-2 mb-4">
         {(['jobs','news','links'] as const).map(t=>(
           <button key={t} onClick={()=>setTab(t)}
             className="px-4 py-2 rounded-xl text-sm capitalize transition-all"
-            style={{background:tab===t?'#534AB7':'#1a0533',color:tab===t?'white':'#a78bfa',border:'1px solid #2d1063',cursor:'pointer',fontFamily:'DM Sans'}}>
+            style={{background:tab===t?'#10b981':'#0d1f35',color:tab===t?'white':'#6ee7b7',border:'1px solid #1a3a5c',cursor:'pointer',fontFamily:'DM Sans'}}>
             {t==='links'?'Direct Links':t==='jobs'?'Jobs':'Tech News'}
           </button>
         ))}
       </div>
       {tab==='jobs' && <div className="space-y-2">{srJobs.map((item,i)=>(
         <div key={i} className="card p-4">
-          <a href={item.url} target="_blank" rel="noreferrer" className="text-sm font-medium hover:underline" style={{color:'#a78bfa',textDecoration:'none'}}>{item.title}</a>
-          <div className="text-xs mt-1" style={{color:'#7c3aed'}}>Silicon Republic . {item.co} . {item.dt}</div>
+          <a href={item.url} target="_blank" rel="noreferrer" className="text-sm font-medium hover:underline" style={{color:'#6ee7b7',textDecoration:'none'}}>{item.title}</a>
+          <div className="text-xs mt-1" style={{color:'#10b981'}}>Silicon Republic . {item.co} . {item.dt}</div>
         </div>
       ))}</div>}
       {tab==='news' && <div className="space-y-2">{srNews.map((item,i)=>(
         <div key={i} className="card p-4">
-          <a href={item.url} target="_blank" rel="noreferrer" className="text-sm font-medium hover:underline" style={{color:'#a78bfa',textDecoration:'none'}}>{item.title}</a>
-          <div className="text-xs mt-1" style={{color:'#7c3aed'}}>Silicon Republic . {item.dt}</div>
+          <a href={item.url} target="_blank" rel="noreferrer" className="text-sm font-medium hover:underline" style={{color:'#6ee7b7',textDecoration:'none'}}>{item.title}</a>
+          <div className="text-xs mt-1" style={{color:'#10b981'}}>Silicon Republic . {item.dt}</div>
         </div>
       ))}</div>}
       {tab==='links' && <div className="grid grid-cols-2 gap-3">
@@ -456,7 +508,7 @@ function SiliconRepublic() {
           ['Dublin tech companies','https://www.siliconrepublic.com/companies'],['Data & Analytics','https://www.siliconrepublic.com/data-science'],
           ['Cybersecurity','https://www.siliconrepublic.com/security'],['Newsletter signup','https://www.siliconrepublic.com/newsletter']
         ].map(([l,u])=>(
-          <a key={l} href={u} target="_blank" rel="noreferrer" className="card p-3 flex items-center gap-2 text-sm" style={{color:'#a78bfa',textDecoration:'none'}}>
+          <a key={l} href={u} target="_blank" rel="noreferrer" className="card p-3 flex items-center gap-2 text-sm" style={{color:'#6ee7b7',textDecoration:'none'}}>
             <ExternalLink size={13}/>{l}
           </a>
         ))}
@@ -468,27 +520,78 @@ function SiliconRepublic() {
 // ============================================================================
 // SV NEWS
 // ============================================================================
-function SVNews() {
+function SVNews({ news, loading, lastUpdated }: { news: any[], loading: boolean, lastUpdated: string | null }) {
   const [tagF, setTagF] = useState('All')
   const tags = ['All','AI','Policy','Jobs','Funding']
   const news = SV_NEWS.filter(n => tagF==='All' || n.tag===tagF)
   const tagStyle: Record<string,string> = {
-    AI:'background:#1e3a5f;color:#93c5fd',Policy:'background:#4c1d95;color:#ddd6fe',
+    AI:'background:#1e3a5f;color:#93c5fd',Policy:'background:#0e2a4a;color:#bae6fd',
     Jobs:'background:#064e3b;color:#6ee7b7',Funding:'background:#78350f;color:#fde68a'
   }
   return (
     <div className="animate-fade-in">
-      <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8d5ff'}}>Silicon Valley & Global AI News</h1>
-      <p className="text-sm mb-3" style={{color:'#7c3aed'}}>Latest stories shaping your job market - April 2026.</p>
-      <div className="rounded-xl p-4 mb-4" style={{background:'#1e3a5f',border:'1px solid #1d4ed8'}}>
-        <div className="text-xs font-semibold mb-1" style={{color:'#93c5fd',textTransform:'uppercase'}}>* EU AI Act enforcement starts August 2, 2026 - 99 days away</div>
-        <div className="text-sm" style={{color:'#dbeafe'}}>Your EU AI Act knowledge is urgently in demand right now. Companies are hiring AI governance and T&S analysts at unprecedented speed.</div>
+      <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8f4f0'}}>Silicon Valley & Global AI News</h1>
+      <div className="flex items-center gap-2 mb-3">
+        <p className="text-sm" style={{color:'#10b981'}}>Live news fetched from TechCrunch, Silicon Republic, VentureBeat.</p>
+        {lastUpdated && <span className="text-xs ml-auto" style={{color:'#4a6a7a'}}>
+          Updated {new Date(lastUpdated).toLocaleTimeString('en-IE',{hour:'2-digit',minute:'2-digit'})}
+        </span>}
+        <div className="w-2 h-2 rounded-full animate-pulse flex-shrink-0" style={{background:'#10b981'}}/>
       </div>
+      <div className="rounded-xl p-4 mb-4" style={{background:'#0e2a4a',border:'1px solid #10b981'}}>
+        <div className="text-xs font-semibold mb-1" style={{color:'#fde68a',textTransform:'uppercase'}}>* EU AI Act enforcement starts August 2, 2026</div>
+        <div className="text-sm" style={{color:'#ecfdf5'}}>Your EU AI Act knowledge is urgently in demand right now. Companies are hiring AI governance and T&S analysts at unprecedented speed.</div>
+      </div>
+
+      {/* LIVE NEWS */}
+      {loading && (
+        <div className="flex items-center gap-2 mb-4 p-3 rounded-xl" style={{background:'#0d1f35',border:'1px solid #1a3a5c'}}>
+          <div className="w-2 h-2 rounded-full animate-pulse" style={{background:'#10b981'}}/>
+          <span className="text-xs" style={{color:'#6ee7b7'}}>Fetching latest news from TechCrunch, Silicon Republic, VentureBeat...</span>
+        </div>
+      )}
+
+      {news.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-2 h-2 rounded-full animate-pulse" style={{background:'#10b981'}}/>
+            <span className="text-xs font-semibold uppercase tracking-wider" style={{color:'#6ee7b7'}}>Live news - {news.length} stories</span>
+          </div>
+          <div className="space-y-3">
+            {news.map((item: any, i: number) => {
+              const tagColors: Record<string,string> = {
+                'T&S':'background:#064e3b;color:#6ee7b7',
+                'Policy':'background:#0e2a4a;color:#93c5fd',
+                'Jobs':'background:#3b2800;color:#fde68a',
+                'AI':'background:#1a3a5c;color:#bae6fd',
+                'Ireland':'background:#064e3b;color:#86efac',
+              }
+              const tagStyle = tagColors[item.tag] || 'background:#1a3a5c;color:#bae6fd'
+              return (
+                <div key={i} className="card p-4">
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="flex-1 min-w-0">
+                      <a href={item.url} target="_blank" rel="noreferrer"
+                        className="text-sm font-medium hover:underline" style={{color:'#6ee7b7',textDecoration:'none'}}>
+                        {item.title}
+                      </a>
+                      <div className="text-xs mt-1" style={{color:'#4a6a7a'}}>{item.source} - {item.pubDate ? new Date(item.pubDate).toLocaleDateString('en-IE') : 'Today'}</div>
+                      {item.desc && <p className="text-xs mt-1" style={{color:'#94a3b8'}}>{item.desc.slice(0,120)}...</p>}
+                    </div>
+                    <span className="chip text-xs flex-shrink-0" style={{...Object.fromEntries(tagStyle.split(';').map((s: string)=>s.split(':').map((x: string)=>x.trim())))}}>{item.tag}</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <div className="my-4 border-t" style={{borderColor:'#1a3a5c'}}/>
+        </div>
+      )}
       <div className="flex gap-2 mb-4 flex-wrap">
         {tags.map(t=>(
           <button key={t} onClick={()=>setTagF(t)}
             className="px-3 py-1 rounded-full text-xs transition-all"
-            style={{background:tagF===t?'#534AB7':'#1a0533',color:tagF===t?'white':'#a78bfa',border:'1px solid #2d1063',cursor:'pointer',fontFamily:'DM Sans'}}>
+            style={{background:tagF===t?'#10b981':'#0d1f35',color:tagF===t?'white':'#6ee7b7',border:'1px solid #1a3a5c',cursor:'pointer',fontFamily:'DM Sans'}}>
             {t}
           </button>
         ))}
@@ -498,8 +601,8 @@ function SVNews() {
           <div key={i} className="card p-4">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="flex-1 min-w-0">
-                <a href={item.url} target="_blank" rel="noreferrer" className="text-sm font-medium hover:underline leading-snug" style={{color:'#a78bfa',textDecoration:'none'}}>{item.title}</a>
-                <div className="text-xs mt-1" style={{color:'#7c3aed'}}>{item.source} . {item.date}</div>
+                <a href={item.url} target="_blank" rel="noreferrer" className="text-sm font-medium hover:underline leading-snug" style={{color:'#6ee7b7',textDecoration:'none'}}>{item.title}</a>
+                <div className="text-xs mt-1" style={{color:'#10b981'}}>{item.source} . {item.date}</div>
                 <div className="text-xs mt-2 italic" style={{color:'#6ee7b7'}}>Why it matters: {item.relevance}</div>
               </div>
               <span className="chip text-xs flex-shrink-0" style={{...Object.fromEntries(tagStyle[item.tag]?.split(';').map(s=>s.split(':').map(x=>x.trim())) || [])}}>{item.tag}</span>
@@ -508,13 +611,13 @@ function SVNews() {
         ))}
       </div>
       <div className="mt-6">
-        <h2 className="text-sm font-semibold mb-3" style={{color:'#e8d5ff'}}>Follow these sources daily</h2>
+        <h2 className="text-sm font-semibold mb-3" style={{color:'#e8f4f0'}}>Follow these sources daily</h2>
         <div className="grid grid-cols-2 gap-2">
           {[['TechCrunch AI','https://techcrunch.com/category/artificial-intelligence/'],['VentureBeat AI','https://venturebeat.com/category/ai'],
             ['Silicon Republic','https://www.siliconrepublic.com/machines'],['Wired AI','https://www.wired.com/tag/artificial-intelligence/'],
             ['MIT Tech Review','https://www.technologyreview.com/topic/artificial-intelligence/'],['EU AI Act tracker','https://artificialintelligenceact.eu/']
           ].map(([l,u])=>(
-            <a key={l} href={u} target="_blank" rel="noreferrer" className="card p-3 flex items-center gap-2 text-sm" style={{color:'#a78bfa',textDecoration:'none'}}>
+            <a key={l} href={u} target="_blank" rel="noreferrer" className="card p-3 flex items-center gap-2 text-sm" style={{color:'#6ee7b7',textDecoration:'none'}}>
               <ExternalLink size={12}/>{l}
             </a>
           ))}
@@ -540,8 +643,8 @@ function Companies() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8d5ff'}}>All Companies in Dublin</h1>
-      <p className="text-sm mb-4" style={{color:'#7c3aed'}}>{COMPANIES.length} companies with Dublin offices across all sectors.</p>
+      <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8f4f0'}}>All Companies in Dublin</h1>
+      <p className="text-sm mb-4" style={{color:'#10b981'}}>{COMPANIES.length} companies with Dublin offices across all sectors.</p>
       <div className="flex gap-3 mb-4 flex-wrap">
         <input className="input flex-1 min-w-48" placeholder="Search companies..." value={search} onChange={e=>setSearch(e.target.value)}/>
         <select className="input w-44" value={catF} onChange={e=>setCatF(e.target.value)}>
@@ -552,20 +655,20 @@ function Companies() {
       {Object.entries(groups).map(([cat,items])=>(
         <div key={cat} className="mb-6">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-1 h-4 rounded-full" style={{background:CAT_COLORS[cat]||'#534AB7'}}/>
-            <h2 className="text-xs font-semibold uppercase tracking-wider" style={{color:'#a78bfa'}}>{cat} ({items.length})</h2>
+            <div className="w-1 h-4 rounded-full" style={{background:CAT_COLORS[cat]||'#10b981'}}/>
+            <h2 className="text-xs font-semibold uppercase tracking-wider" style={{color:'#6ee7b7'}}>{cat} ({items.length})</h2>
           </div>
           <div className="grid grid-cols-3 gap-2">
             {items.map((co,i)=>(
               <div key={i} className="card p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
-                    style={{background:CAT_COLORS[co.cat]||'#2d1063',color:'#e9d5ff'}}>{co.abbr}</div>
-                  <div className="font-medium text-sm truncate" style={{color:'#e8d5ff'}}>{co.name}</div>
+                    style={{background:CAT_COLORS[co.cat]||'#0d1f35',color:'#e8f4f0'}}>{co.abbr}</div>
+                  <div className="font-medium text-sm truncate" style={{color:'#e8f4f0'}}>{co.name}</div>
                 </div>
-                <p className="text-xs mb-2 leading-relaxed" style={{color:'#9ca3af'}}>{co.desc}</p>
+                <p className="text-xs mb-2 leading-relaxed" style={{color:'#94a3b8'}}>{co.desc}</p>
                 <a href={co.url} target="_blank" rel="noreferrer"
-                  className="text-xs flex items-center gap-1 hover:underline" style={{color:'#a78bfa',textDecoration:'none'}}>
+                  className="text-xs flex items-center gap-1 hover:underline" style={{color:'#6ee7b7',textDecoration:'none'}}>
                   <ExternalLink size={10}/>View jobs
                 </a>
               </div>
@@ -590,36 +693,36 @@ function Portals() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8d5ff'}}>All Job Portals</h1>
-      <p className="text-sm mb-4" style={{color:'#7c3aed'}}>{PORTALS.length} portals - Irish, global, startup and niche boards.</p>
+      <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8f4f0'}}>All Job Portals</h1>
+      <p className="text-sm mb-4" style={{color:'#10b981'}}>{PORTALS.length} portals - Irish, global, startup and niche boards.</p>
       <div className="flex gap-3 mb-4 flex-wrap items-center">
         <div className="flex gap-2">
           {cats.map(c=>(
             <button key={c} onClick={()=>setCatF(c)}
               className="px-3 py-1 rounded-full text-xs transition-all"
-              style={{background:catF===c?'#534AB7':'#1a0533',color:catF===c?'white':'#a78bfa',border:'1px solid #2d1063',cursor:'pointer',fontFamily:'DM Sans'}}>
+              style={{background:catF===c?'#10b981':'#0d1f35',color:catF===c?'white':'#6ee7b7',border:'1px solid #1a3a5c',cursor:'pointer',fontFamily:'DM Sans'}}>
               {c}
             </button>
           ))}
         </div>
-        <label className="flex items-center gap-2 text-xs cursor-pointer ml-auto" style={{color:'#a78bfa'}}>
+        <label className="flex items-center gap-2 text-xs cursor-pointer ml-auto" style={{color:'#6ee7b7'}}>
           <input type="checkbox" checked={priOnly} onChange={e=>setPriOnly(e.target.checked)} className="rounded"/>
           Priority only
         </label>
       </div>
       {Object.entries(groups).map(([cat,items])=>(
         <div key={cat} className="mb-6">
-          <h2 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{color:'#a78bfa'}}>{cat} portals ({items.length})</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{color:'#6ee7b7'}}>{cat} portals ({items.length})</h2>
           <div className="grid grid-cols-3 gap-2">
             {items.map((p,i)=>(
               <div key={i} className="card p-3">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium" style={{color:'#e8d5ff'}}>{p.name}</span>
+                  <span className="text-sm font-medium" style={{color:'#e8f4f0'}}>{p.name}</span>
                   {p.priority && <span className="badge-pri">PRIORITY</span>}
                 </div>
-                <p className="text-xs mb-2" style={{color:'#9ca3af'}}>{p.desc}</p>
+                <p className="text-xs mb-2" style={{color:'#94a3b8'}}>{p.desc}</p>
                 <a href={p.url} target="_blank" rel="noreferrer"
-                  className="text-xs flex items-center gap-1 hover:underline" style={{color:'#a78bfa',textDecoration:'none'}}>
+                  className="text-xs flex items-center gap-1 hover:underline" style={{color:'#6ee7b7',textDecoration:'none'}}>
                   <ExternalLink size={10}/>Search jobs
                 </a>
               </div>
@@ -645,11 +748,11 @@ function Agencies() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8d5ff'}}>Recruitment Agencies</h1>
-      <p className="text-sm mb-3" style={{color:'#7c3aed'}}>{AGENCIES.length} agencies - 80% of Dublin tech roles go through agencies first!</p>
-      <div className="rounded-xl p-4 mb-4" style={{background:'#1e3a5f',border:'1px solid #1d4ed8'}}>
-        <div className="text-xs font-semibold mb-1" style={{color:'#93c5fd',textTransform:'uppercase'}}>What to say when you contact them</div>
-        <p className="text-sm" style={{color:'#dbeafe',lineHeight:'1.6'}}>
+      <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8f4f0'}}>Recruitment Agencies</h1>
+      <p className="text-sm mb-3" style={{color:'#10b981'}}>{AGENCIES.length} agencies - 80% of Dublin tech roles go through agencies first!</p>
+      <div className="rounded-xl p-4 mb-4" style={{background:'#0e2a4a',border:'1px solid #10b981'}}>
+        <div className="text-xs font-semibold mb-1" style={{color:'#fde68a',textTransform:'uppercase'}}>What to say when you contact them</div>
+        <p className="text-sm" style={{color:'#ecfdf5',lineHeight:'1.6'}}>
           "Hi, I am a Trust & Safety AI Analyst with 3+ years experience at Meta, including LLM evaluation, abuse detection and content policy.
           I hold an MSc in Business Analytics from Dublin Business School and am CSPO certified.
           I am immediately available for permanent roles in Dublin as a T&S Analyst, AI Analyst, Data Analyst, Business Analyst or Product Owner.
@@ -660,24 +763,24 @@ function Agencies() {
         {tiers.map(t=>(
           <button key={t} onClick={()=>setTierF(t)}
             className="px-3 py-1 rounded-full text-xs transition-all"
-            style={{background:tierF===t?'#534AB7':'#1a0533',color:tierF===t?'white':'#a78bfa',border:'1px solid #2d1063',cursor:'pointer',fontFamily:'DM Sans'}}>
+            style={{background:tierF===t?'#10b981':'#0d1f35',color:tierF===t?'white':'#6ee7b7',border:'1px solid #1a3a5c',cursor:'pointer',fontFamily:'DM Sans'}}>
             {t}
           </button>
         ))}
       </div>
       {tierOrder.filter(t=>groups[t]).map(tier=>(
         <div key={tier} className="mb-6">
-          <h2 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{color:'#a78bfa'}}>{tierLabels[tier]} ({groups[tier].length})</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{color:'#6ee7b7'}}>{tierLabels[tier]} ({groups[tier].length})</h2>
           <div className="space-y-2">
             {groups[tier].map((a,i)=>(
               <div key={i} className="card p-4 flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-medium" style={{color:'#e8d5ff'}}>{a.name}</span>
+                    <span className="text-sm font-medium" style={{color:'#e8f4f0'}}>{a.name}</span>
                     {a.tier==='Priority' && <span className="badge-pri">PRIORITY</span>}
                   </div>
-                  <p className="text-xs" style={{color:'#9ca3af'}}>{a.desc}</p>
-                  <p className="text-xs mt-1" style={{color:'#7c3aed'}}>Best for: {a.roles}</p>
+                  <p className="text-xs" style={{color:'#94a3b8'}}>{a.desc}</p>
+                  <p className="text-xs mt-1" style={{color:'#10b981'}}>Best for: {a.roles}</p>
                 </div>
                 <a href={a.url} target="_blank" rel="noreferrer" className="btn-ghost text-xs py-1 px-3 flex items-center gap-1 flex-shrink-0">
                   <ExternalLink size={10}/>View jobs
@@ -738,8 +841,8 @@ function Tracker({ apps, onRefresh }: { apps: Application[], onRefresh: () => vo
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-xl font-bold" style={{fontFamily:'Sora',color:'#e8d5ff'}}>My Application Tracker</h1>
-          <p className="text-sm" style={{color:'#7c3aed'}}>Saved to Supabase - syncs across all devices.</p>
+          <h1 className="text-xl font-bold" style={{fontFamily:'Sora',color:'#e8f4f0'}}>My Application Tracker</h1>
+          <p className="text-sm" style={{color:'#10b981'}}>Saved to Supabase - syncs across all devices.</p>
         </div>
         <button className="btn-primary flex items-center gap-2" onClick={()=>setShowForm(!showForm)}>
           <Plus size={14}/>{showForm?'Cancel':'Log application'}
@@ -748,10 +851,10 @@ function Tracker({ apps, onRefresh }: { apps: Application[], onRefresh: () => vo
 
       {/* Stats */}
       <div className="grid grid-cols-5 gap-2 mb-4">
-        {[['Total',stats.total,'#a78bfa'],['Applied',stats.applied,'#93c5fd'],['Interviews',stats.interviews,'#fde68a'],['Offers',stats.offers,'#6ee7b7'],['Rejected',stats.rejected,'#fca5a5']].map(([l,v,c])=>(
-          <div key={l} className="rounded-xl p-3 text-center" style={{background:'#1a0533',border:'1px solid #2d1063'}}>
+        {[['Total',stats.total,'#6ee7b7'],['Applied',stats.applied,'#93c5fd'],['Interviews',stats.interviews,'#fde68a'],['Offers',stats.offers,'#6ee7b7'],['Rejected',stats.rejected,'#fca5a5']].map(([l,v,c])=>(
+          <div key={l} className="rounded-xl p-3 text-center" style={{background:'#0d1f35',border:'1px solid #1a3a5c'}}>
             <div className="text-xl font-semibold" style={{fontFamily:'Sora',color:c as string}}>{v}</div>
-            <div className="text-xs mt-1" style={{color:'#7c3aed'}}>{l}</div>
+            <div className="text-xs mt-1" style={{color:'#10b981'}}>{l}</div>
           </div>
         ))}
       </div>
@@ -759,7 +862,7 @@ function Tracker({ apps, onRefresh }: { apps: Application[], onRefresh: () => vo
       {/* Add form */}
       {showForm && (
         <div className="card p-4 mb-4">
-          <h2 className="text-sm font-semibold mb-3" style={{color:'#e8d5ff'}}>New application</h2>
+          <h2 className="text-sm font-semibold mb-3" style={{color:'#e8f4f0'}}>New application</h2>
           <div className="grid grid-cols-2 gap-3 mb-3">
             <input className="input" placeholder="Job title *" value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/>
             <input className="input" placeholder="Company *" value={form.company} onChange={e=>setForm({...form,company:e.target.value})}/>
@@ -795,8 +898,8 @@ function Tracker({ apps, onRefresh }: { apps: Application[], onRefresh: () => vo
       {/* Table */}
       {filtered.length === 0 ? (
         <div className="text-center py-16 card">
-          <Briefcase size={40} className="mx-auto mb-3 opacity-30" style={{color:'#a78bfa'}}/>
-          <p style={{color:'#7c3aed'}}>No applications yet - log one above!</p>
+          <Briefcase size={40} className="mx-auto mb-3 opacity-30" style={{color:'#6ee7b7'}}/>
+          <p style={{color:'#10b981'}}>No applications yet - log one above!</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -804,27 +907,27 @@ function Tracker({ apps, onRefresh }: { apps: Application[], onRefresh: () => vo
             <div key={a.id} className="card p-3">
               <div className="flex items-center gap-3 flex-wrap">
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate" style={{color:'#e8d5ff'}}>{a.title}</div>
-                  <div className="text-xs mt-0.5" style={{color:'#a78bfa'}}>
+                  <div className="text-sm font-medium truncate" style={{color:'#e8f4f0'}}>{a.title}</div>
+                  <div className="text-xs mt-0.5" style={{color:'#6ee7b7'}}>
                     {a.company}
                     {a.salary && <span className="badge-sal ml-1">{a.salary}</span>}
                   </div>
                   <div className="text-xs mt-0.5 flex items-center gap-2 flex-wrap" style={{color:'#6b7280'}}>
                     <span>{a.source}</span>
                     <span>Applied: {a.date_applied}</span>
-                    {a.posted_date && <span style={{color:'#7c3aed'}}>Posted: {a.posted_date}</span>}
+                    {a.posted_date && <span style={{color:'#10b981'}}>Posted: {a.posted_date}</span>}
                   </div>
-                  {a.notes && <p className="text-xs mt-1 italic" style={{color:'#9ca3af'}}>{a.notes}</p>}
+                  {a.notes && <p className="text-xs mt-1 italic" style={{color:'#94a3b8'}}>{a.notes}</p>}
                 </div>
                 <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
                   {roleChip(a.role_type)}
                   <select value={a.status} onChange={e=>changeStatus(a.id,e.target.value)}
                     className="text-xs rounded-xl px-2 py-1 border cursor-pointer"
-                    style={{background:'#1a0533',borderColor:'#2d1063',color:'#a78bfa',fontFamily:'DM Sans'}}>
+                    style={{background:'#0d1f35',borderColor:'#1a3a5c',color:'#6ee7b7',fontFamily:'DM Sans'}}>
                     {STATUSES.map(s=><option key={s}>{s}</option>)}
                   </select>
                   {a.job_url && <a href={a.job_url} target="_blank" rel="noreferrer" className="btn-ghost py-1 px-2 text-xs flex items-center gap-1"><ExternalLink size={10}/>Open</a>}
-                  <button onClick={()=>del(a.id)} className="p-1 rounded-lg transition-colors hover:bg-red-900/30" style={{background:'none',border:'none',cursor:'pointer',color:'#7c3aed'}}>
+                  <button onClick={()=>del(a.id)} className="p-1 rounded-lg transition-colors hover:bg-red-900/30" style={{background:'none',border:'none',cursor:'pointer',color:'#10b981'}}>
                     <Trash2 size={13}/>
                   </button>
                 </div>
@@ -872,8 +975,8 @@ function CVEditor({ cv, onSave }: { cv: CVData|null, onSave: (cv:CVData)=>void }
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8d5ff'}}>CV Editor</h1>
-      <p className="text-sm mb-4" style={{color:'#7c3aed'}}>Edit on the left - live preview on the right.</p>
+      <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8f4f0'}}>CV Editor</h1>
+      <p className="text-sm mb-4" style={{color:'#10b981'}}>Edit on the left - live preview on the right.</p>
       <div className="grid grid-cols-2 gap-6">
         {/* Editor */}
         <div className="space-y-3">
@@ -881,12 +984,12 @@ function CVEditor({ cv, onSave }: { cv: CVData|null, onSave: (cv:CVData)=>void }
           <input className="input" placeholder="Contact line" {...f('contact_line')}/>
           <textarea className="input" placeholder="Summary" rows={4} {...f('summary')}/>
           <textarea className="input" placeholder="Skills" rows={3} {...f('skills')}/>
-          <div className="text-xs font-semibold uppercase tracking-wider px-1" style={{color:'#7c3aed'}}>Experience 1</div>
+          <div className="text-xs font-semibold uppercase tracking-wider px-1" style={{color:'#10b981'}}>Experience 1</div>
           <input className="input" placeholder="Job title" {...f('exp1_title')}/>
           <input className="input" placeholder="Company" {...f('exp1_company')}/>
           <input className="input" placeholder="Dates" {...f('exp1_dates')}/>
           <textarea className="input" placeholder="Bullets (one per line)" rows={4} {...f('exp1_bullets')}/>
-          <div className="text-xs font-semibold uppercase tracking-wider px-1" style={{color:'#7c3aed'}}>Experience 2</div>
+          <div className="text-xs font-semibold uppercase tracking-wider px-1" style={{color:'#10b981'}}>Experience 2</div>
           <input className="input" placeholder="Job title" {...f('exp2_title')}/>
           <input className="input" placeholder="Company" {...f('exp2_company')}/>
           <input className="input" placeholder="Dates" {...f('exp2_dates')}/>
@@ -902,11 +1005,11 @@ function CVEditor({ cv, onSave }: { cv: CVData|null, onSave: (cv:CVData)=>void }
           <div style={{fontSize:'11px',color:'#555',marginBottom:'12px'}}>{form.contact_line}</div>
           {[{h:'Summary',t:form.summary},{h:'Skills',t:form.skills}].map(s=>(
             <div key={s.h}>
-              <div style={{fontSize:'9px',fontWeight:'600',textTransform:'uppercase',letterSpacing:'1.2px',color:'#534AB7',borderBottom:'1.5px solid #e9d5ff',margin:'10px 0 5px',paddingBottom:'2px'}}>{s.h}</div>
+              <div style={{fontSize:'9px',fontWeight:'600',textTransform:'uppercase',letterSpacing:'1.2px',color:'#10b981',borderBottom:'1.5px solid #e9d5ff',margin:'10px 0 5px',paddingBottom:'2px'}}>{s.h}</div>
               <p style={{fontSize:'11px'}}>{s.t}</p>
             </div>
           ))}
-          <div style={{fontSize:'9px',fontWeight:'600',textTransform:'uppercase',letterSpacing:'1.2px',color:'#534AB7',borderBottom:'1.5px solid #e9d5ff',margin:'10px 0 5px',paddingBottom:'2px'}}>Experience</div>
+          <div style={{fontSize:'9px',fontWeight:'600',textTransform:'uppercase',letterSpacing:'1.2px',color:'#10b981',borderBottom:'1.5px solid #e9d5ff',margin:'10px 0 5px',paddingBottom:'2px'}}>Experience</div>
           {[{t:form.exp1_title,c:form.exp1_company,d:form.exp1_dates,b:form.exp1_bullets},{t:form.exp2_title,c:form.exp2_company,d:form.exp2_dates,b:form.exp2_bullets}].map((e,i)=>(
             <div key={i} style={{marginBottom:'10px'}}>
               <div style={{fontWeight:'600',fontSize:'12px'}}>{e.t} - {e.c}</div>
@@ -914,7 +1017,7 @@ function CVEditor({ cv, onSave }: { cv: CVData|null, onSave: (cv:CVData)=>void }
               <div style={{fontSize:'11px'}}>{bl(e.b)}</div>
             </div>
           ))}
-          <div style={{fontSize:'9px',fontWeight:'600',textTransform:'uppercase',letterSpacing:'1.2px',color:'#534AB7',borderBottom:'1.5px solid #e9d5ff',margin:'10px 0 5px',paddingBottom:'2px'}}>Education</div>
+          <div style={{fontSize:'9px',fontWeight:'600',textTransform:'uppercase',letterSpacing:'1.2px',color:'#10b981',borderBottom:'1.5px solid #e9d5ff',margin:'10px 0 5px',paddingBottom:'2px'}}>Education</div>
           <p style={{fontSize:'11px'}}>{form.education.split('\n').map((l,i)=><span key={i}>{l}<br/></span>)}</p>
         </div>
       </div>
@@ -959,13 +1062,13 @@ function InterviewPrep() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8d5ff'}}>Interview Prep</h1>
-      <p className="text-sm mb-4" style={{color:'#7c3aed'}}>STAR answers tailored to your background.</p>
+      <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8f4f0'}}>Interview Prep</h1>
+      <p className="text-sm mb-4" style={{color:'#10b981'}}>STAR answers tailored to your background.</p>
       <div className="flex gap-2 mb-4 flex-wrap">
         {companies.map((c,i)=>(
           <button key={c} onClick={()=>{setTab(i);setOpen(null)}}
             className="px-4 py-2 rounded-xl text-sm transition-all"
-            style={{background:tab===i?'#534AB7':'#1a0533',color:tab===i?'white':'#a78bfa',border:'1px solid #2d1063',cursor:'pointer',fontFamily:'DM Sans'}}>
+            style={{background:tab===i?'#10b981':'#0d1f35',color:tab===i?'white':'#6ee7b7',border:'1px solid #1a3a5c',cursor:'pointer',fontFamily:'DM Sans'}}>
             {c}
           </button>
         ))}
@@ -974,14 +1077,14 @@ function InterviewPrep() {
         {qa[tab].map(([q,a],i)=>(
           <div key={i} className="card">
             <button className="w-full text-left p-4 flex items-center justify-between gap-3"
-              style={{background:'none',border:'none',cursor:'pointer',color:'#e8d5ff',fontFamily:'DM Sans'}}
+              style={{background:'none',border:'none',cursor:'pointer',color:'#e8f4f0',fontFamily:'DM Sans'}}
               onClick={()=>setOpen(open===i?null:i)}>
               <span className="text-sm font-medium">? {q}</span>
-              <span style={{color:'#7c3aed',flexShrink:0}}>{open===i?'^':'v'}</span>
+              <span style={{color:'#10b981',flexShrink:0}}>{open===i?'^':'v'}</span>
             </button>
             {open===i && (
               <div className="px-4 pb-4">
-                <p className="text-sm leading-relaxed" style={{color:'#c4b5fd'}}>{a}</p>
+                <p className="text-sm leading-relaxed" style={{color:'#e8f4f0'}}>{a}</p>
                 <textarea className="input mt-3 text-xs" placeholder="Your notes..." rows={2}/>
               </div>
             )}
@@ -990,14 +1093,14 @@ function InterviewPrep() {
       </div>
       <div className="rounded-xl p-4 mb-4" style={{background:'#064e3b',border:'1px solid #065f46'}}>
         <div className="text-xs font-semibold mb-1" style={{color:'#6ee7b7',textTransform:'uppercase'}}>STAR reminder</div>
-       <p className="text-sm" style={{color:'#d1fae5'}}>STAR method: Situation, Task, Action, Result. Always end with a measurable outcome.</p>
+        <p className="text-sm" style={{color:'#d1fae5'}}>STAR method: Situation, Task, Action, Result. Always end with a measurable outcome.</p>
       </div>
       <div className="card p-4">
-        <h2 className="text-sm font-semibold mb-3" style={{color:'#e8d5ff'}}>Your unique selling points</h2>
+        <h2 className="text-sm font-semibold mb-3" style={{color:'#e8f4f0'}}>Your unique selling points</h2>
         {['Rare combo: LLM evaluation + T&S operations + data analysis - very few people have all three','EMEA market ownership: autonomous policy decisions for a region across 4 markets','EU AI Act awareness: directly relevant for OpenAI, Google, TikTok Dublin RIGHT NOW','MSc Business Analytics: signals data fluency beyond just operations','CSPO certified: product thinking on top of analyst skills','Immediately available: top of recruiter shortlists'].map((p,i)=>(
           <div key={i} className="flex items-start gap-2 mb-2">
             <span style={{color:'#6ee7b7',flexShrink:0}}>v</span>
-            <span className="text-sm" style={{color:'#c4b5fd'}}>{p}</span>
+            <span className="text-sm" style={{color:'#e8f4f0'}}>{p}</span>
           </div>
         ))}
       </div>
@@ -1012,7 +1115,7 @@ function WeeklyPlan() {
   const weeks = [
     {
       title:'Daily - do these every single day',
-      color:'#7c3aed',
+      color:'#10b981',
       tasks:[
         {t:'Check LinkedIn jobs - T&S + AI Analyst + Dublin - filter past 24h',url:'https://www.linkedin.com/jobs/search/?keywords=trust+safety+analyst&location=Dublin&f_TPR=r86400'},
         {t:'Check Indeed Ireland - analyst + Dublin - sorted by date',url:'https://ie.indeed.com/jobs?q=trust+safety+analyst+OR+AI+analyst+OR+business+analyst&l=Dublin&fromage=1&sort=date'},
@@ -1090,10 +1193,10 @@ function WeeklyPlan() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8d5ff'}}>4-Week Job Search Plan</h1>
-      <p className="text-sm mb-4" style={{color:'#7c3aed'}}>Follow this plan to maximise your chances of getting hired within a month.</p>
-      <div className="rounded-xl p-4 mb-5" style={{background:'#2d1063',borderLeft:'4px solid #a78bfa'}}>
-        <p className="text-sm italic" style={{color:'#ddd6fe',lineHeight:'1.6'}}>
+      <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8f4f0'}}>4-Week Job Search Plan</h1>
+      <p className="text-sm mb-4" style={{color:'#10b981'}}>Follow this plan to maximise your chances of getting hired within a month.</p>
+      <div className="rounded-xl p-4 mb-5" style={{background:'#1a3a5c',borderLeft:'4px solid #fde68a'}}>
+        <p className="text-sm italic" style={{color:'#e8f4f0',lineHeight:'1.6'}}>
           The candidates who get hired fastest are not the ones with the best CV - they are the ones who are most systematic, most persistent, and most visible. This plan makes you that person.
         </p>
       </div>
@@ -1102,8 +1205,8 @@ function WeeklyPlan() {
           <div key={wi} className="card p-4">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-1 h-5 rounded-full flex-shrink-0" style={{background:w.color}}/>
-              <h2 className="text-sm font-semibold" style={{color:'#e8d5ff'}}>{w.title}</h2>
-              <span className="text-xs ml-auto" style={{color:'#7c3aed'}}>
+              <h2 className="text-sm font-semibold" style={{color:'#e8f4f0'}}>{w.title}</h2>
+              <span className="text-xs ml-auto" style={{color:'#10b981'}}>
                 {w.tasks.filter((_,i)=>checked.has(`${wi}-${i}`)).length}/{w.tasks.length} done
               </span>
             </div>
@@ -1114,12 +1217,12 @@ function WeeklyPlan() {
                 return (
                   <div key={ti} className="flex items-start gap-3">
                     <input type="checkbox" checked={done} onChange={()=>toggle(key)}
-                      className="mt-0.5 flex-shrink-0" style={{accentColor:'#534AB7'}}/>
+                      className="mt-0.5 flex-shrink-0" style={{accentColor:'#10b981'}}/>
                     <div className="flex-1 flex items-center justify-between gap-2 flex-wrap">
                       <span className="text-sm" style={{color:done?'#6b7280':'#c4b5fd',textDecoration:done?'line-through':'none'}}>{task.t}</span>
                       {task.url && (
                         <a href={task.url} target="_blank" rel="noreferrer"
-                          className="text-xs flex items-center gap-1 flex-shrink-0" style={{color:'#7c3aed',textDecoration:'none'}}>
+                          className="text-xs flex items-center gap-1 flex-shrink-0" style={{color:'#10b981',textDecoration:'none'}}>
                           <ExternalLink size={10}/>Go
                         </a>
                       )}
@@ -1164,47 +1267,47 @@ function SalaryGuide() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8d5ff'}}>Dublin Salary Guide 2026</h1>
-      <p className="text-sm mb-4" style={{color:'#7c3aed'}}>Salary ranges for your target roles in Dublin tech companies.</p>
-      <div className="rounded-xl p-4 mb-5" style={{background:'#1e3a5f',border:'1px solid #1d4ed8'}}>
-        <div className="text-xs font-semibold mb-1" style={{color:'#93c5fd',textTransform:'uppercase'}}>Devanshi's target range</div>
-        <p className="text-sm" style={{color:'#dbeafe'}}>Based on your 3+ years T&S experience, MSc and CSPO cert, you should be targeting <strong>EUR55,000-EUR80,000</strong> depending on seniority and company size. Do not undersell yourself.</p>
+      <h1 className="text-xl font-bold mb-1" style={{fontFamily:'Sora',color:'#e8f4f0'}}>Dublin Salary Guide 2026</h1>
+      <p className="text-sm mb-4" style={{color:'#10b981'}}>Salary ranges for your target roles in Dublin tech companies.</p>
+      <div className="rounded-xl p-4 mb-5" style={{background:'#0e2a4a',border:'1px solid #10b981'}}>
+        <div className="text-xs font-semibold mb-1" style={{color:'#fde68a',textTransform:'uppercase'}}>Devanshi's target range</div>
+        <p className="text-sm" style={{color:'#ecfdf5'}}>Based on your 3+ years T&S experience, MSc and CSPO cert, you should be targeting <strong>EUR55,000-EUR80,000</strong> depending on seniority and company size. Do not undersell yourself.</p>
       </div>
-      <div className="rounded-2xl overflow-hidden mb-5" style={{border:'1px solid #2d1063'}}>
+      <div className="rounded-2xl overflow-hidden mb-5" style={{border:'1px solid #1a3a5c'}}>
         <table className="w-full text-sm">
           <thead>
-            <tr style={{background:'#1a0533'}}>
+            <tr style={{background:'#0d1f35'}}>
               {['Role','Level','Salary','Example Companies'].map(h=>(
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style={{color:'#7c3aed'}}>{h}</th>
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style={{color:'#10b981'}}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.map((row,i)=>(
-              <tr key={i} style={{background:i%2===0?'#1a0533':'#0f0a1e',borderTop:'1px solid #2d1063'}}>
-                <td className="px-4 py-3" style={{color:'#e8d5ff'}}>{row[0]}</td>
+              <tr key={i} style={{background:i%2===0?'#0d1f35':'#0a1628',borderTop:'1px solid #3d1a2e'}}>
+                <td className="px-4 py-3" style={{color:'#e8f4f0'}}>{row[0]}</td>
                 <td className="px-4 py-3"><span className={`chip ${row[1]==='Senior'?'chip-ts':'chip-da'}`}>{row[1]}</span></td>
                 <td className="px-4 py-3 font-medium" style={{color:'#6ee7b7'}}>{row[2]}</td>
-                <td className="px-4 py-3 text-xs" style={{color:'#9ca3af'}}>{row[3]}</td>
+                <td className="px-4 py-3 text-xs" style={{color:'#94a3b8'}}>{row[3]}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <h2 className="text-sm font-semibold mb-3" style={{color:'#e8d5ff'}}>Salary benchmarking resources</h2>
+      <h2 className="text-sm font-semibold mb-3" style={{color:'#e8f4f0'}}>Salary benchmarking resources</h2>
       <div className="grid grid-cols-2 gap-2 mb-5">
         {[['Sigmar 2026 Salary Guide','https://www.sigmarrecruitment.com/salary-guide/'],['Hays Ireland 2026','https://www.hays.ie/salary-guide'],['Mason Alexander 2026 Tech Salary Guide','https://www.masonalexander.ie/salary-guide'],['IT Search 2026 Salary Guide','https://itsearch.ie/salary-guide/'],['Glassdoor - T&S Salaries Dublin','https://www.glassdoor.ie/Salaries/dublin-trust-and-safety-analyst-salary-SRCH_IL.0,6_IM1078_KO7,31.htm'],['LinkedIn Salary Insights','https://www.linkedin.com/salary/']].map(([l,u])=>(
-          <a key={l} href={u} target="_blank" rel="noreferrer" className="card p-3 flex items-center gap-2 text-sm" style={{color:'#a78bfa',textDecoration:'none'}}>
+          <a key={l} href={u} target="_blank" rel="noreferrer" className="card p-3 flex items-center gap-2 text-sm" style={{color:'#6ee7b7',textDecoration:'none'}}>
             <ExternalLink size={12}/>{l}
           </a>
         ))}
       </div>
       <div className="card p-4">
-        <h2 className="text-sm font-semibold mb-3" style={{color:'#e8d5ff'}}>Negotiation tips</h2>
+        <h2 className="text-sm font-semibold mb-3" style={{color:'#e8f4f0'}}>Negotiation tips</h2>
         {['Always negotiate. 85% of employers expect it. First offer is rarely the best offer.','Anchor high. If they ask your expectation, say EUR5-10k above your minimum.','Ask about the full package: pension (5-10%), health insurance, bonus (5-15%), training budget, hybrid.','Your LLM evaluation background commands a premium right now due to EU AI Act demand. Use it.','Use competing offers or agency interest as leverage - even a conversation with CPL counts.'].map((t,i)=>(
           <div key={i} className="flex items-start gap-2 mb-2">
             <span style={{color:'#6ee7b7',flexShrink:0}}> </span>
-            <span className="text-sm" style={{color:'#c4b5fd'}}>{t}</span>
+            <span className="text-sm" style={{color:'#e8f4f0'}}>{t}</span>
           </div>
         ))}
       </div>
