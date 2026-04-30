@@ -1134,7 +1134,7 @@ function WeeklyPlan() {
       <div className="rounded-xl p-4 mt-4" style={{background:'#064e3b',border:'1px solid #065f46'}}>
         <div className="text-xs font-semibold mb-1" style={{color:'#6ee7b7',textTransform:'uppercase'}}>The numbers game</div>
         <p className="text-sm" style={{color:'#d1fae5',lineHeight:'1.6'}}>
-          In Dublin tech, a typical pipeline: 40 applications -> 8 recruiter calls -> 4 first interviews -> 2 second interviews  -  1 offer. If you follow this 4-week plan, you can hit those numbers. Keep going, Devanshi.
+          In Dublin tech, a typical pipeline: 40 applications, 8 recruiter calls, 4 first interviews, 2 second interviews, 1 offer. If you follow this 4-week plan, you can hit those numbers. Keep going, Devanshi.
         </p>
       </div>
     </div>
