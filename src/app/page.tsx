@@ -17,11 +17,11 @@ const ROLE_COLORS: Record<string, string> = {
 }
 const STATUS_COLORS: Record<string, string> = {
   Saved: 'chip-saved', Applied: 'chip-applied', Interviewing: 'chip-interviewing',
-  Offer: 'chip-offer', Rejected: 'chip-rejected', Ghosted: 'chip-ghosted',
+  Offer: 'chip-offer', 'Move On': 'chip-rejected', Rejected: 'chip-rejected', Ghosted: 'chip-ghosted',
 }
 const STATUS_ICONS: Record<string, React.ReactNode> = {
   Saved: <Clock size={11} />, Applied: <CheckCircle size={11} />, Interviewing: <Star size={11} />,
-  Offer: <Award size={11} />, Rejected: <XCircle size={11} />, Ghosted: <AlertCircle size={11} />,
+  Offer: <Award size={11} />, 'Move On': <XCircle size={11} />, Rejected: <XCircle size={11} />, Ghosted: <AlertCircle size={11} />,
 }
 const CAT_COLORS: Record<string, string> = {
   'Big Tech': '#059669', AI: '#1d4ed8', Fintech: '#0369a1', SaaS: '#b45309',
@@ -63,6 +63,7 @@ const NAV = [
   { id: 'cv',        label: 'CV Editor',        icon: <FileText size={18} /> },
   { id: 'interview', label: 'Interview Prep',   icon: <Brain size={18} /> },
   { id: 'plan',      label: '4-Week Plan',       icon: <Calendar size={18} /> },
+  { id: 'calendar',  label: 'Calendar',          icon: <Calendar size={18} /> },
   { id: 'salary',    label: 'Salary Guide',     icon: <Target size={18} /> },
 ]
 
@@ -75,12 +76,12 @@ const BOTTOM_NAV = [
   { id: 'plan',      label: 'Plan',    icon: <Calendar size={20} /> },
 ]
 
-const STATUSES = ['Saved', 'Applied', 'Interviewing', 'Offer', 'Rejected', 'Ghosted']
+const STATUSES = ['Saved', 'Applied', 'Interviewing', 'Offer', 'Move On', 'Ghosted']
 const ROLES    = ['Trust & Safety', 'AI Analyst', 'Data Analyst', 'Product Owner', 'Business Analyst']
 
 // ── auto-polling hooks ────────────────────────────────────────────────────────
 const NEWS_INTERVAL = 30 * 60 * 1000   // 30 min
-const JOBS_INTERVAL = 60 * 60 * 1000   // 60 min
+const JOBS_INTERVAL = 30 * 60 * 1000   // 30 min
 const APPS_INTERVAL =  2 * 60 * 1000   //  2 min
 
 /** returns seconds until next poll */
@@ -434,6 +435,7 @@ export default function App() {
                 {page === 'cv'        && <CVEditor cv={cv} onSave={setCV} />}
                 {page === 'interview' && <InterviewPrep />}
                 {page === 'plan'      && <WeeklyPlan />}
+                {page === 'calendar'  && <CalendarView apps={apps} />}
                 {page === 'salary'    && <SalaryGuide />}
               </>
             )}
@@ -489,6 +491,19 @@ function Dashboard({ stats, apps, tip, setPage, liveJobs, liveLastUpdated, liveL
           <p className="text-sm text-white/80">Dublin · Trust & Safety · AI Analyst · Data · PO · BA</p>
         </div>
         <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full" style={{ background: 'rgba(255,255,255,0.07)' }} />
+      </div>
+
+      {/* May 2026 Motivation Banner */}
+      <div className="rounded-2xl p-4 mb-4 flex items-start gap-3 relative overflow-hidden"
+        style={{ background: 'linear-gradient(135deg,#1e40af 0%,#0891b2 60%,#059669 100%)', border: 'none' }}>
+        <div className="relative z-10 flex-1">
+          <div className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#bae6fd' }}>May 2026 · Your Month</div>
+          <p className="text-sm font-semibold text-white leading-relaxed">
+            The right opportunity is already looking for you — just not found each other yet. Keep showing up. Keep applying. Dublin's tech scene is hiring. 💚
+          </p>
+        </div>
+        <span className="text-2xl relative z-10 flex-shrink-0">🌟</span>
+        <div className="absolute -right-6 -bottom-6 w-28 h-28 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }} />
       </div>
 
       {/* Tip */}
@@ -563,25 +578,34 @@ function Dashboard({ stats, apps, tip, setPage, liveJobs, liveLastUpdated, liveL
           </button>
         </div>
 
-        {/* Quick search + recent */}
+        {/* Morning Job Check portals */}
         <div>
-          <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#1e3a5f' }}>
-            <Radio size={13} style={{ color: '#059669' }} /> Search now
-          </h2>
-          <div className="space-y-1 mb-5">
+          <div className="flex items-center gap-2 mb-1">
+            <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: '#1e3a5f' }}>
+              ☀️ Morning Job Check
+            </h2>
+          </div>
+          <p className="text-xs mb-3" style={{ color: '#64748b' }}>Open these every morning — fresh jobs posted overnight</p>
+          <div className="grid grid-cols-2 gap-2 mb-5">
             {[
-              ['LinkedIn - T&S Dublin today', 'https://www.linkedin.com/jobs/search/?keywords=trust+safety+analyst&location=Dublin&f_TPR=r86400'],
-              ['LinkedIn - AI Analyst Dublin', 'https://www.linkedin.com/jobs/search/?keywords=AI+analyst+LLM&location=Dublin&f_TPR=r86400'],
-              ['Indeed - Business Analyst Dublin', 'https://ie.indeed.com/jobs?q=business+analyst&l=Dublin&fromage=1&sort=date'],
-              ['Indeed - Product Owner Dublin', 'https://ie.indeed.com/jobs?q=product+owner&l=Dublin&fromage=1&sort=date'],
-              ['IrishJobs - Analyst roles', 'https://www.irishjobs.ie/Jobs/analyst/in-Dublin'],
-              ['Silicon Republic Jobs', 'https://www.siliconrepublic.com/jobs'],
-              ['CPL - Analyst Dublin', 'https://www.cpl.com/jobs?searchType=keyword&keyword=analyst&location=Dublin'],
-            ].map(([l, u]) => (
-              <a key={l} href={u} target="_blank" rel="noreferrer"
-                className="flex items-center gap-2 text-xs py-1.5 px-2 rounded-lg transition-colors hover:bg-purple-50"
-                style={{ color: '#1e3a5f', textDecoration: 'none' }}>
-                <ExternalLink size={10} style={{ color: '#6ee7b7', flexShrink: 0 }} />{l}
+              { name: 'LinkedIn', emoji: '💼', url: 'https://www.linkedin.com/jobs/search/?keywords=trust+safety+analyst+OR+AI+analyst+OR+data+analyst&location=Dublin&f_TPR=r86400', color: '#0a66c2', bg: '#eff6ff' },
+              { name: 'Indeed IE', emoji: '🔍', url: 'https://ie.indeed.com/jobs?q=analyst+OR+trust+safety&l=Dublin&fromage=1&sort=date', color: '#003A9B', bg: '#eff6ff' },
+              { name: 'IrishJobs', emoji: '🇮🇪', url: 'https://www.irishjobs.ie/Jobs/analyst/in-Dublin', color: '#059669', bg: '#ecfdf5' },
+              { name: 'Jobs.ie', emoji: '📋', url: 'https://www.jobs.ie/jobs/analyst/in-Dublin', color: '#0891b2', bg: '#e0f2fe' },
+              { name: 'Silicon Rep', emoji: '💡', url: 'https://www.siliconrepublic.com/jobs', color: '#7c3aed', bg: '#f5f3ff' },
+              { name: 'Glassdoor', emoji: '🏢', url: 'https://www.glassdoor.ie/Job/dublin-trust-safety-jobs-SRCH_IL.0,6_IC2382522_KO7,19.htm', color: '#0caa41', bg: '#f0fdf4' },
+              { name: 'Otta', emoji: '🚀', url: 'https://otta.com/search/jobs?query=trust+safety+analyst+dublin', color: '#f59e0b', bg: '#fffbeb' },
+              { name: 'Wellfound', emoji: '🌱', url: 'https://wellfound.com/jobs?role=analyst&location=Dublin', color: '#ec4899', bg: '#fdf2f8' },
+              { name: 'CPL', emoji: '🎯', url: 'https://www.cpl.com/jobs?searchType=keyword&keyword=analyst&location=Dublin', color: '#059669', bg: '#ecfdf5' },
+              { name: 'Sigmar', emoji: '📌', url: 'https://www.sigmar.ie/jobs/?keyword=analyst&location=Dublin', color: '#dc2626', bg: '#fff1f2' },
+              { name: 'Morgan McKinley', emoji: '💰', url: 'https://www.morganmckinley.com/ie/jobs?keywords=analyst&location=Dublin', color: '#1d4ed8', bg: '#dbeafe' },
+              { name: 'Eir / T&S', emoji: '🛡️', url: 'https://ie.indeed.com/jobs?q=trust+safety&l=Dublin&sort=date&fromage=1', color: '#065f46', bg: '#ecfdf5' },
+            ].map(p => (
+              <a key={p.name} href={p.url} target="_blank" rel="noreferrer"
+                className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold transition-all hover:scale-105"
+                style={{ background: p.bg, color: p.color, textDecoration: 'none', border: `1px solid ${p.color}20` }}>
+                <span>{p.emoji}</span><span>{p.name}</span>
+                <ExternalLink size={9} style={{ marginLeft: 'auto', opacity: 0.5 }} />
               </a>
             ))}
           </div>
@@ -621,10 +645,11 @@ function LiveJobs({ apps, onTrack, liveJobs, liveLoading, liveLastUpdated, liveN
   liveJobs: any[]; liveLoading: boolean; liveLastUpdated: string | null
   liveNewCount: number; liveClearNew: () => void; liveRefresh: () => void
 }) {
-  const [roleF, setRoleF]   = useState('All')
-  const [sortF, setSortF]   = useState('newest')
-  const [search, setSearch] = useState('')
-  const [adding, setAdding] = useState<string | null>(null)
+  const [roleF, setRoleF]       = useState('All')
+  const [contractF, setContractF] = useState('All')
+  const [sortF, setSortF]       = useState('newest')
+  const [search, setSearch]     = useState('')
+  const [adding, setAdding]     = useState<string | null>(null)
   const lastUpdated = liveLastUpdated
   const newCount    = liveNewCount
   const clearNew    = liveClearNew
@@ -633,6 +658,12 @@ function LiveJobs({ apps, onTrack, liveJobs, liveLoading, liveLastUpdated, liveN
 
   let jobs = JOBS.filter(j =>
     (roleF === 'All' || j.role === roleF) &&
+    (!search || (j.title + j.company).toLowerCase().includes(search.toLowerCase()))
+  )
+  // Also filter live jobs by contract type
+  const filteredLive = liveJobs.filter(j =>
+    (roleF === 'All' || j.role === roleF) &&
+    (contractF === 'All' || j.contractType === contractF) &&
     (!search || (j.title + j.company).toLowerCase().includes(search.toLowerCase()))
   )
   if (sortF === 'newest') jobs = [...jobs].sort((a, b) => a.age - b.age)
@@ -702,10 +733,10 @@ function LiveJobs({ apps, onTrack, liveJobs, liveLoading, liveLastUpdated, liveN
       {/* Live jobs banner */}
       {liveJobs.length > 0 && (
         <div className="rounded-xl p-4 mb-4" style={{ background: '#f0fdf4', border: '1px solid #86efac' }}>
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
             <PulseDot />
             <span className="text-xs font-bold" style={{ color: '#15803d' }}>
-              LIVE — {liveJobs.length} jobs from LinkedIn / Indeed / Glassdoor
+              LIVE — {filteredLive.length} jobs from Indeed Ireland RSS
             </span>
             {lastUpdated && (
               <span className="text-xs ml-auto" style={{ color: '#64748b' }}>
@@ -713,15 +744,26 @@ function LiveJobs({ apps, onTrack, liveJobs, liveLoading, liveLastUpdated, liveN
               </span>
             )}
           </div>
+          {filteredLive.length === 0 && (contractF !== 'All' || roleF !== 'All') && (
+            <p className="text-xs text-center py-3" style={{ color: '#64748b' }}>No live jobs match these filters. Try changing role or contract type.</p>
+          )}
           <div className="space-y-2">
-            {liveJobs.slice(0, 6).map((j: any) => (
+            {filteredLive.slice(0, 8).map((j: any) => (
               <div key={j.id} className="card p-3">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold" style={{ color: '#1e3a5f' }}>{j.title}</div>
-                    <div className="text-xs mt-1" style={{ color: '#059669' }}>
+                    <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                      <div className="text-sm font-semibold" style={{ color: '#1e3a5f' }}>{j.title}</div>
+                      {j.contractType && j.contractType !== 'Not specified' && (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                          style={{ background: j.contractType === 'Permanent' ? '#ecfdf5' : '#eff6ff',
+                                   color: j.contractType === 'Permanent' ? '#065f46' : '#1e40af' }}>
+                          {j.contractType === 'Permanent' ? '🏢' : '📄'} {j.contractType}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs mt-0.5" style={{ color: '#059669' }}>
                       {j.company} · {j.location} · via {j.source}
-                      <span className="badge-sal ml-2">{j.salary}</span>
                     </div>
                     <p className="text-xs mt-1" style={{ color: '#64748b' }}>{j.desc}</p>
                   </div>
@@ -756,6 +798,19 @@ function LiveJobs({ apps, onTrack, liveJobs, liveLoading, liveLastUpdated, liveN
             <button key={r.value} onClick={() => setRoleF(r.value)}
               className={`role-pill ${roleF === r.value ? r.cls : 'role-pill-inactive'}`}>
               <span>{r.icon}</span>{r.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Contract type filter */}
+      <div className="mb-4">
+        <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#064e3b' }}>Contract type</p>
+        <div className="flex flex-wrap gap-2">
+          {['All', 'Permanent', 'Contract', 'Not specified'].map(ct => (
+            <button key={ct} onClick={() => setContractF(ct)}
+              className={`role-pill ${contractF === ct ? (ct === 'All' ? 'role-pill-all' : ct === 'Permanent' ? 'role-pill-ts' : ct === 'Contract' ? 'role-pill-ai' : 'role-pill-inactive') : 'role-pill-inactive'}`}>
+              {ct === 'Permanent' ? '🏢' : ct === 'Contract' ? '📄' : ct === 'Not specified' ? '❓' : '✨'} {ct}
             </button>
           ))}
         </div>
@@ -1200,7 +1255,7 @@ function Tracker({ apps, onRefresh }: { apps: Application[]; onRefresh: () => vo
     total: apps.length, applied: apps.filter(a => a.status === 'Applied').length,
     interviews: apps.filter(a => a.status === 'Interviewing').length,
     offers: apps.filter(a => a.status === 'Offer').length,
-    rejected: apps.filter(a => a.status === 'Rejected').length,
+    rejected: apps.filter(a => a.status === 'Move On' || a.status === 'Rejected').length,
   }
 
   return (
@@ -1222,7 +1277,7 @@ function Tracker({ apps, onRefresh }: { apps: Application[]; onRefresh: () => vo
       <div className="tracker-stats mb-5">
         {[['Total', stats.total, '#059669', '#ecfdf5'], ['Applied', stats.applied, '#1d4ed8', '#dbeafe'],
           ['Interviews', stats.interviews, '#b45309', '#fef3c7'], ['Offers', stats.offers, '#15803d', '#dcfce7'],
-          ['Rejected', stats.rejected, '#dc2626', '#fee2e2'],
+          ['Move On', stats.rejected, '#dc2626', '#fee2e2'],
         ].map(([l, v, c, bg]) => (
           <div key={l as string} className="rounded-xl p-3 text-center" style={{ background: bg as string, border: `1px solid ${(c as string)}30` }}>
             <div className="text-xl font-bold" style={{ fontFamily: 'Sora', color: c as string }}>{v as number}</div>
@@ -2130,6 +2185,159 @@ function WeeklyPlan() {
           In Dublin tech: 40 applications → 8 recruiter calls → 4 first interviews → 2 second interviews → 1 offer. You can hit those numbers. Keep going, Devanshi.
         </p>
       </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+// CALENDAR VIEW — month view with application dates + follow-up reminders
+// ═══════════════════════════════════════════════════════════════════════════════
+function CalendarView({ apps }: { apps: Application[] }) {
+  const today = new Date()
+  const [viewYear, setViewYear]   = useState(today.getFullYear())
+  const [viewMonth, setViewMonth] = useState(today.getMonth()) // 0-based
+
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
+  const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+
+  function prevMonth() {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1) }
+    else setViewMonth(m => m - 1)
+  }
+  function nextMonth() {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1) }
+    else setViewMonth(m => m + 1)
+  }
+
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay()
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+
+  // Map date strings (YYYY-MM-DD) → applications
+  const appsByDate: Record<string, Application[]> = {}
+  for (const a of apps) {
+    const d = a.date_applied
+    if (d) { if (!appsByDate[d]) appsByDate[d] = []; appsByDate[d].push(a) }
+  }
+
+  // Follow-up reminders: apps in 'Applied' status applied 7+ days ago
+  const followUps = apps.filter(a => {
+    if (a.status !== 'Applied') return false
+    const applied = new Date(a.date_applied || '')
+    const diff = (today.getTime() - applied.getTime()) / (1000 * 60 * 60 * 24)
+    return diff >= 7
+  })
+
+  const cells: (number | null)[] = [...Array(firstDay).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)]
+
+  return (
+    <div className="animate-fade-in">
+      <h1 className="section-header mb-1">Calendar</h1>
+      <p className="text-sm mb-5" style={{ color: '#64748b' }}>Application dates, interview reminders & follow-ups</p>
+
+      {/* Follow-up reminders */}
+      {followUps.length > 0 && (
+        <div className="rounded-xl p-4 mb-5" style={{ background: '#fffbeb', border: '1px solid #fde68a' }}>
+          <div className="flex items-center gap-2 mb-2">
+            <Bell size={14} style={{ color: '#d97706' }} />
+            <span className="text-sm font-bold" style={{ color: '#92400e' }}>Follow-up reminders ({followUps.length})</span>
+          </div>
+          <div className="space-y-2">
+            {followUps.slice(0, 5).map(a => {
+              const days = Math.floor((today.getTime() - new Date(a.date_applied || '').getTime()) / (1000 * 60 * 60 * 24))
+              return (
+                <div key={a.id} className="flex items-center justify-between gap-2 text-xs">
+                  <span className="font-semibold truncate" style={{ color: '#1e3a5f' }}>{a.title} @ {a.company}</span>
+                  <span className="flex-shrink-0 font-semibold" style={{ color: '#b45309' }}>Applied {days}d ago — follow up!</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Month nav */}
+      <div className="flex items-center justify-between mb-4">
+        <button onClick={prevMonth} className="btn-ghost py-1.5 px-3 text-xs">← Prev</button>
+        <h2 className="text-base font-bold" style={{ fontFamily: 'Sora', color: '#1e3a5f' }}>
+          {MONTHS[viewMonth]} {viewYear}
+        </h2>
+        <button onClick={nextMonth} className="btn-ghost py-1.5 px-3 text-xs">Next →</button>
+      </div>
+
+      {/* Day headers */}
+      <div className="grid grid-cols-7 mb-1">
+        {DAYS.map(d => (
+          <div key={d} className="text-center text-xs font-bold py-1" style={{ color: '#64748b' }}>{d}</div>
+        ))}
+      </div>
+
+      {/* Calendar grid */}
+      <div className="grid grid-cols-7 gap-1 mb-5">
+        {cells.map((day, i) => {
+          if (!day) return <div key={`empty-${i}`} />
+          const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+          const dayApps = appsByDate[dateStr] || []
+          const isToday = today.getFullYear() === viewYear && today.getMonth() === viewMonth && today.getDate() === day
+          return (
+            <div key={day} className="rounded-xl p-1.5 min-h-[52px] transition-all"
+              style={{
+                background: isToday ? '#ecfdf5' : dayApps.length > 0 ? '#eff6ff' : '#ffffff',
+                border: isToday ? '2px solid #059669' : dayApps.length > 0 ? '1px solid #93c5fd' : '1px solid #e2e8f0',
+              }}>
+              <div className="text-xs font-bold text-center mb-0.5"
+                style={{ color: isToday ? '#059669' : dayApps.length > 0 ? '#1d4ed8' : '#64748b' }}>
+                {day}
+              </div>
+              {dayApps.slice(0, 2).map((a, ai) => (
+                <div key={ai} className="text-xs truncate rounded px-1 py-0.5 mb-0.5"
+                  style={{ background: '#dbeafe', color: '#1e40af', fontSize: '9px', fontWeight: 600 }}>
+                  {a.company.slice(0, 8)}
+                </div>
+              ))}
+              {dayApps.length > 2 && <div className="text-center" style={{ fontSize: '9px', color: '#1d4ed8' }}>+{dayApps.length - 2}</div>}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 text-xs mb-5 flex-wrap" style={{ color: '#64748b' }}>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded" style={{ background: '#ecfdf5', border: '2px solid #059669' }} />Today
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded" style={{ background: '#eff6ff', border: '1px solid #93c5fd' }} />Application logged
+        </div>
+      </div>
+
+      {/* This month list */}
+      {(() => {
+        const thisMonthApps = apps.filter(a => a.date_applied?.startsWith(`${viewYear}-${String(viewMonth + 1).padStart(2,'0')}`))
+        if (!thisMonthApps.length) return (
+          <div className="text-center py-8 rounded-xl" style={{ background: '#f0fdf4', border: '1px dashed #6ee7b7' }}>
+            <p className="text-sm" style={{ color: '#64748b' }}>No applications logged for {MONTHS[viewMonth]} {viewYear}</p>
+          </div>
+        )
+        return (
+          <div>
+            <h3 className="text-sm font-bold mb-3" style={{ color: '#1e3a5f' }}>
+              {MONTHS[viewMonth]} applications ({thisMonthApps.length})
+            </h3>
+            <div className="space-y-2">
+              {thisMonthApps.sort((a, b) => (b.date_applied || '').localeCompare(a.date_applied || '')).map(a => (
+                <div key={a.id} className="card p-3 flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-bold truncate" style={{ color: '#1e3a5f' }}>{a.title}</div>
+                    <div className="text-xs font-medium" style={{ color: '#059669' }}>{a.company} · {a.date_applied}</div>
+                  </div>
+                  <span className={`chip ${STATUS_COLORS[a.status] || 'chip-saved'}`}>{a.status}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
